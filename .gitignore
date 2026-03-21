@@ -1,2 +1,15 @@
 venv
 *.terraform
+*.tfstate
+*tfstate.backup
+*DE-Supply-Chain_accessKeys.csv
+*awscliv2
+.ruff_cache
+awscliv2.zip
+*__pycache__
+*.pyc
+build
+*.egg-info
+streamlit_log.log
+*.log
+*.env
