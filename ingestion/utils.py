@@ -14,5 +14,3 @@ def file_path(path: str, extension: str):
     filename = f"{path}_{time}.{extension}"
     ingest_logger.info(f"✅ Parquet file {filename} created")
     return Path(filename)
-ingestion/utils.py
-ingestion\write.py
