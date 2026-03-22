@@ -94,6 +94,7 @@ def write_parquet(df: pd.DataFrame, source: str, filename: str, folder: str) -> 
     try:
         s3_client = get_dest_s3_client()
         s3_client.put_object(Bucket=DST_BUCKET, Key=s3_key, Body=buffer.getvalue())
+        ingest_logger.info(f"✅Object {s3_key} sent ")
     except botocore.exceptions.ClientError as e:
         ingest_logger.error(f"❌An error occured {e}")
     except botocore.exceptions.EndpointConnectionError:
