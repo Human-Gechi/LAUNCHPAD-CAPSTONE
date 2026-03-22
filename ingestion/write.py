@@ -1,25 +1,26 @@
 # Built-in
 import os
 from io import BytesIO
-from pathlib import Path
 
 # Third-party
 import boto3
+import botocore.exceptions
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 from dotenv import load_dotenv
-import botocore.exceptions
+
+from ingestion.utility import parquet_path, time_stamp
 
 # Local modules
 from log import ingest_logger
-from .utility import time_stamp, parquet_path
 
 load_dotenv()
 
 
 DST_PROFILE = "dev-Supply-Chain"
-DST_BUCKET = os.getenv("DESTINATI0N_BUCKET")
+DST_BUCKET = os.getenv("DST_BUCKET")
+
 
 def object_metadata(source: str, df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -28,31 +29,34 @@ def object_metadata(source: str, df: pd.DataFrame) -> pd.DataFrame:
     Args:
         source(str): Data source
         df(pd.DataFrame) : Pandas DataFrame
-    
+
     Returns:
         DataFrame
     """
     df = df.copy()
     df["ingested_at"] = time_stamp()
     df["source"] = source
-    ingest_logger
+    ingest_logger.info("✅ Metadata added successfully")
     return df
+
 
 def get_dest_s3_client():
     """
-    Get for s3 client for destination AWS account.  
+    Get for s3 client for destination AWS account.
 
     Raises:
-        botocore.exceptions.ProfileNotFound: If invalid profile name 
+        botocore.exceptions.ProfileNotFound: If invalid profile name
     """
     try:
+        # Session creation
         session = boto3.Session(profile_name=DST_PROFILE)
         ingest_logger.info("✅ Session created successfully")
         return session.client("s3")
     except botocore.exceptions.ProfileNotFound:
-        ingest_logger.error("❌ Destniation profile not found")
+        ingest_logger.error("❌ Destination profile not found")
 
-def write_parquet(df: pd.DataFrame, source: str, filename: str) -> str:
+
+def write_parquet(df: pd.DataFrame, source: str, filename: str, folder: str) -> str:
     """
     Converts a pandas DataFrame to Parquet format and uploads it to the destination S3 raw bucket.
 
@@ -74,27 +78,23 @@ def write_parquet(df: pd.DataFrame, source: str, filename: str) -> str:
     # Convert to parquet in memory
     buffer = BytesIO()
 
-    #Convert DataFrame to Pyarrow table
+    # Convert DataFrame to Pyarrow table
     table = pa.Table.from_pandas(df)
 
-    #Write table to parquet format
+    # Write table to parquet format
     pq.write_table(table, buffer)
 
     # Move cursor to start of program
     buffer.seek(0)
 
     # Build S3 source
-    s3_key = parquet_path(source, filename)
+    s3_key = parquet_path(source, folder, filename)
 
     # Upload to your S3 bucket
     try:
         s3_client = get_dest_s3_client()
-        s3_client.put_object(
-            Bucket=DST_BUCKET,
-            Key=s3_key,
-            Body=buffer.getvalue()
-        )
+        s3_client.put_object(Bucket=DST_BUCKET, Key=s3_key, Body=buffer.getvalue())
     except botocore.exceptions.ClientError as e:
         ingest_logger.error(f"❌An error occured {e}")
-    except botocore.exceptions.EndpointConnectionError as e:
-        ingest_logger.error(f"❌Check your network and try again later")
+    except botocore.exceptions.EndpointConnectionError:
+        ingest_logger.error("❌Check your network and try again later")

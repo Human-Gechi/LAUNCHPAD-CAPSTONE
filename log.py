@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from pathlib import Path
 
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
@@ -53,9 +54,10 @@ def _build_logger(name: str, file_path: Path) -> logging.Logger:  # Log files
         file_handler.setFormatter(logging.Formatter(LOG_FORMAT))
         logger.addHandler(file_handler)
 
-        terminal_handler = logging.StreamHandler(file_path)
+        terminal_handler = logging.StreamHandler(sys.stdout)
         terminal_handler.setLevel(logging.INFO)
         terminal_handler.setFormatter(logging.Formatter(LOG_FORMAT))
+        logger.addHandler(terminal_handler)
 
     return logger
 
@@ -65,14 +67,14 @@ parent_dir = _resolve_log_dir()
 
 # Creating paths to the files depending on the dir.
 ingest_log_file_path = parent_dir / "ingest_logs.log"
-api_log_file_path = parent_dir / "api_log.log"
+sheets_log_file_path = parent_dir / "api_log.log"
 streamlit_log_file_path = parent_dir / "streamlit_log.log"
 
 # Make log files in directory
-for p in (ingest_log_file_path, api_log_file_path, streamlit_log_file_path):
+for p in (ingest_log_file_path, sheets_log_file_path, streamlit_log_file_path):
     p.parent.mkdir(parents=True, exist_ok=True)
     p.touch(exist_ok=True)
 
 ingest_logger = _build_logger("ingest_logger", ingest_log_file_path)
-api_logger = _build_logger("api_logger", api_log_file_path)
+sheets_logger = _build_logger("sheets_logger", sheets_log_file_path)
 streamlit_logger = _build_logger("streamlit_logger", streamlit_log_file_path)

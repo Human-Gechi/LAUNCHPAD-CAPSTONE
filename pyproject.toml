@@ -37,6 +37,7 @@ exclude = ["awscliv2"]
 [tool.ruff]
 line-length = 120
 target-version = "py311"
+
 exclude = [
     "venv",
     "awscliv2",
@@ -48,3 +49,6 @@ exclude = [
 quote-style = "double"
 indent-style = "space"
 line-ending = "lf"
+
+[tool.ruff.lint]
+select = ["E", "I"]
