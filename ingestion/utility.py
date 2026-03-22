@@ -3,7 +3,7 @@ from datetime import datetime
 
 
 # Get Timestamp
-def time_stamp():
+def time_stamp() -> datetime:
     """
     Full timestamp for file uniqueness
 
@@ -13,7 +13,7 @@ def time_stamp():
     return datetime.utcnow().strftime("%Y-%m-%d")
 
 
-def full_timestamp():
+def full_timestamp() -> datetime:
     """
     Full UTC timestamp for file uniqueness
 

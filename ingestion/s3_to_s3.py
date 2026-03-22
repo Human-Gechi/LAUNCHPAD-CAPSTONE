@@ -48,7 +48,6 @@ class MoveData:
         self.dst_client = dst_client
         self.src_bucket = src_bucket
         self.dst_bucket = dst_bucket
-        ingest_logger.info("✅ SRC & DST Buckets initialization")
 
     def validate_folders(self, source):
         global folders

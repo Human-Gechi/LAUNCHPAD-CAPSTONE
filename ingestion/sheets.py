@@ -7,7 +7,7 @@ from google.oauth2.service_account import Credentials
 
 from ingestion.s3_to_s3 import MoveData, S3ClientFactory
 from ingestion.write import write_parquet
-from log import sheets_logger
+from log import ingest_logger
 
 load_dotenv()
 
@@ -28,12 +28,12 @@ class SheetsManager:
         self.client = gspread.authorize(self.creds)
         self.sheet = self.client.open_by_url(self.sheet_url)
         self.worksheet = self.sheet.sheet1
-        sheets_logger.info("✅ Worsheet found, opened")
+        ingest_logger.info("✅ Worsheet found, opened")
 
     def get_dataframe(self):
         data = self.worksheet.get_all_values()
         header, rows = data[0], data[1:]
-        sheets_logger.info("✅ DataFrame created successfully")
+        ingest_logger.info("✅ DataFrame created successfully")
         return pd.DataFrame(rows, columns=header)
 
 
@@ -51,7 +51,7 @@ class SheetsParser:
         if not file_existence:
             write_parquet(df, source, "locations", sheets_title)
         else:
-            sheets_logger.info(f"⏩ Skipping {prefix}/{sheets_title} exists in s3")
+            ingest_logger.info(f"⏩ Skipping {prefix}/{sheets_title} exists in s3")
 
 
 #sheets = SheetsManager()
