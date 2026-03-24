@@ -1,5 +1,3 @@
-import boto3
-import botocore.exceptions
 import pandas as pd
 import os
 from dotenv import load_dotenv
@@ -119,7 +117,6 @@ class Postgres:
         for table in table_names:
             offset = 0
             batches = []
-            columns = None
             while True:
                 attempt = 1
                 while attempt <= max_attempts:
@@ -161,6 +158,3 @@ class Postgres:
                 ingest_logger.info(f"✅ Wrote {len(final_df)} rows from {table} to S3")
             else:
                 ingest_logger.info(f"⏩ Skipping {prefix}/{table} exists in s3")
-
-post = Postgres(dst_client, DST_BUCKET)
-print(post.ingest_data("raw"))

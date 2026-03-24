@@ -146,7 +146,7 @@ class MoveData:
                     for df, filename in csv_files:
                         base = os.path.splitext(filename)[0]
                         if not self.exists_by_basename(prefix, base):
-                            write_parquet(df, source, base, folder)
+                            write_parquet(df, source, folder, base)
                             ingest_logger.info(f"✅ {prefix}/{base} written to s3")
                         else:
                             ingest_logger.info(f"⏩ Skipped {prefix}/{base} (file with base file '{base}' exists)")
@@ -156,14 +156,10 @@ class MoveData:
                     for df, filename in json_files:
                         base = os.path.splitext(filename)[0]
                         if not self.exists_by_basename(prefix, base):
-                            write_parquet(df, source, base, folder)
+                            write_parquet(df, source, folder, base)
                             ingest_logger.info(f"✅ {prefix}/{base} written to s3")
                         else:
                             ingest_logger.info(f"⏩ Skipped {prefix}/{base} (file with base file '{base}' exists)")
         except Exception as e:
             ingest_logger.error(f"❌ Error during ingestion: {e}")
 
-
-if __name__ == "__main__":
-    mover = MoveData(src_client, dst_client, SRC_BUCKET, DST_BUCKET)
-    mover.ingest_files("raw")

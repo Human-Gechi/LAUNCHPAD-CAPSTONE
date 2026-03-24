@@ -44,7 +44,8 @@ class SheetsParser:
 
     def ingest_data(self, source, sheet_manager, df):
         title_parts = sheet_manager.sheet.title.split("-")
-        sheets_title = "-".join(title_parts[2:])
+        idx= title_parts.index("stores")
+        sheets_title = title_parts[idx]
         data_class = MoveData(None, self.dst_client, None, self.dst_bucket)
         prefix = f"{source}/locations"
         file_existence = data_class.exists_by_basename(prefix, sheets_title)
@@ -52,9 +53,3 @@ class SheetsParser:
             write_parquet(df, source, "locations", sheets_title)
         else:
             ingest_logger.info(f"⏩ Skipping {prefix}/{sheets_title} exists in s3")
-
-
-#sheets = SheetsManager()
-#df = sheets.get_dataframe()
-#parser = SheetsParser(dst_client, DST_BUCKET)
-#parser.ingest_data("raw", sheets, df)
