@@ -24,18 +24,17 @@ def full_timestamp() -> datetime:
 
 
 # File path for files
-def parquet_path(source: str, filename: str, folder: str) -> str:
+def parquet_path(folder: str, filename: str) -> str:
     """
-    File path for pparquet files
+    File path for parquet files
 
     Args:
-        source (str): The name of the data source (used for metadata and S3 key).
+        folder (str): Folder which the object will be located (e.g., 'raw/inventory')
         filename (str): The base name for the Parquet file in S3.
-        folder(str): Folder which the object will be located
 
     Returns:
         path: object file path
     """
     ts = full_timestamp()
-    path = f"{source}/{folder}/{filename}_{ts}.parquet"
+    path = f"{folder}/{filename}_{ts}.parquet"
     return path

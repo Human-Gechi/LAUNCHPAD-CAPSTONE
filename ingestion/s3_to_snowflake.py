@@ -137,7 +137,7 @@ class SnowFlake:
             columns = []
             for col, dtype in zip(combined_df.columns, combined_df.dtypes):
                 sf_type = self.parquet_dtypes_to_snowflake(str(dtype))
-                columns.append(f'"{col}" {sf_type}')
+                columns.append(f'"{col.upper()}" {sf_type}')
             columns_sql = ", ".join(columns)
             create_sql = f'CREATE TABLE IF NOT EXISTS {table} ({columns_sql});'
 

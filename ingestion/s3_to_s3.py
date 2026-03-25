@@ -48,6 +48,7 @@ class MoveData:
         self.dst_client = dst_client
         self.src_bucket = src_bucket
         self.dst_bucket = dst_bucket
+        self.data_source = 's3'
 
     def validate_folders(self, source):
         global folders
@@ -82,7 +83,7 @@ class MoveData:
             resp = self.src_client.get_object(Bucket=self.src_bucket, Key=s3_key)
             content = resp["Body"].read().decode("utf-8")
             json_data = json.loads(content)
-            ingest_logger.info(f"....Reading JSON file from s3://{self.src_bucket}/{s3_key}")
+            ingest_logger.info(f"Reading JSON file from s3://{self.src_bucket}/{s3_key}")
             if isinstance(json_data, list):
                 return pd.DataFrame(json_data)
             else:
@@ -146,7 +147,7 @@ class MoveData:
                     for df, filename in csv_files:
                         base = os.path.splitext(filename)[0]
                         if not self.exists_by_basename(prefix, base):
-                            write_parquet(df, source, folder, base)
+                            write_parquet(df, "s3", prefix, base)
                             ingest_logger.info(f"✅ {prefix}/{base} written to s3")
                         else:
                             ingest_logger.info(f"⏩ Skipped {prefix}/{base} (file with base file '{base}' exists)")
@@ -156,7 +157,7 @@ class MoveData:
                     for df, filename in json_files:
                         base = os.path.splitext(filename)[0]
                         if not self.exists_by_basename(prefix, base):
-                            write_parquet(df, source, folder, base)
+                            write_parquet(df, self.data_source, prefix, base)
                             ingest_logger.info(f"✅ {prefix}/{base} written to s3")
                         else:
                             ingest_logger.info(f"⏩ Skipped {prefix}/{base} (file with base file '{base}' exists)")

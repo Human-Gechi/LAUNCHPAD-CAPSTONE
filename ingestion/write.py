@@ -22,7 +22,7 @@ DST_PROFILE = "dev-Supply-Chain"
 DST_BUCKET = os.getenv("DST_BUCKET")
 
 
-def object_metadata(source: str, df: pd.DataFrame) -> pd.DataFrame:
+def object_metadata(data_source: str, df: pd.DataFrame) -> pd.DataFrame:
     """
     Adds metadata to dataframe.
 
@@ -34,8 +34,8 @@ def object_metadata(source: str, df: pd.DataFrame) -> pd.DataFrame:
         DataFrame
     """
     df = df.copy()
-    df["ingested_at"] = time_stamp()
-    df["source"] = source
+    df["ingestion_date"] = time_stamp()
+    df["origin"] = data_source
     ingest_logger.info("✅ Metadata added successfully")
     return df
 
@@ -56,13 +56,14 @@ def get_dest_s3_client():
         ingest_logger.error("❌ Destination profile not found")
 
 
-def write_parquet(df: pd.DataFrame, source: str, filename: str, folder: str) -> str:
+def write_parquet(df: pd.DataFrame, data_source: str, folder: str, filename: str) -> str:
     """
     Converts a pandas DataFrame to Parquet format and uploads it to the destination S3 raw bucket.
 
     Args:
         df (pd.DataFrame): The DataFrame to be converted and uploaded.
-        source (str): The name of the data source (used for metadata and S3 key).
+        data_source (str): The name of the data source (used for metadata and S3 key).
+        folder(str): Folder path to files
         filename (str): The base name for the Parquet file in S3.
 
     Returns:
@@ -73,7 +74,7 @@ def write_parquet(df: pd.DataFrame, source: str, filename: str, folder: str) -> 
         botocore.exceptions.EndpointConnectionError: If there is a network issue connecting to S3.
     """
     # object meta data
-    df = object_metadata(source, df)
+    df = object_metadata(data_source, df)
 
     # Convert to parquet in memory
     buffer = BytesIO()
@@ -88,7 +89,7 @@ def write_parquet(df: pd.DataFrame, source: str, filename: str, folder: str) -> 
     buffer.seek(0)
 
     # Build S3 source
-    s3_key = parquet_path(source, folder, filename)
+    s3_key = parquet_path(folder, filename)
 
     # Upload to your S3 bucket
     try:

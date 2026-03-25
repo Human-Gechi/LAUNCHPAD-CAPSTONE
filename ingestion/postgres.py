@@ -42,6 +42,7 @@ class Postgres:
         self.password = os.getenv("DB_PASSWORD")
         self.dst_client = dst_client
         self.dst_bucket = dst_bucket
+        self.data_source = "aws_rds"
 
 
     def connect_rds(self):
@@ -154,7 +155,10 @@ class Postgres:
             final_df = pd.concat(batches, ignore_index=True)
             file_existence = data_class.exists_by_basename(prefix, table)
             if not file_existence:
-                write_parquet(final_df, source, "transactions", table)
+                write_parquet(final_df, self.data_source, prefix, table)
                 ingest_logger.info(f"✅ Wrote {len(final_df)} rows from {table} to S3")
             else:
                 ingest_logger.info(f"⏩ Skipping {prefix}/{table} exists in s3")
+
+post = Postgres(dst_client, DST_BUCKET)
+print(post.get_table_names())
