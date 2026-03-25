@@ -1,0 +1,286 @@
+version: 2
+
+models:
+  - name: stg_warehouses
+    description: "Contains records of current products levels for all products across all warehouses."
+    columns:
+      - name: warehouse_id
+        description: "Unique warehouse identifier"
+        data_tests:
+          - not_null
+          - unique
+      - name: city
+        description: "City where warehouse is located in the US"
+        data_tests:
+          - not_null
+          - unique
+      - name: state
+        description: "State where the warehouse is located in the US"
+        data_tests:
+          - not_null
+      - name: ingested_at
+        description: "Date the data was ingested from source s3 bucket to dest"
+        data_tests:
+          - not_null
+      - name: source
+        description: "Data source"
+        data_tests:
+          - not_null
+
+  - name: stg_suppliers
+    description: "Contains records of current products levels for all products across all warehouses."
+    columns:
+      - name: supplier_id
+        description: "Unique supplier identifier"
+        data_tests:
+          - not_null
+          - unique
+      - name: supplier_name
+        description: "Name of supplier"
+        data_tests:
+          - not_null
+          - unique
+      - name: category
+        description: " Category of products supplier deals in"
+        data_tests:
+          - not_null
+      - name: country
+        description: "Country supplier is based in"
+        data_tests:
+          - not_null
+      - name: ingested_at
+        description: "Date the data was ingested from source s3 bucket to dest"
+        data_tests:
+          - not_null
+      - name: source
+        description: "Data source"
+        data_tests:
+          - not_null
+
+  - name: stg_products
+    description: "Master list of products, including id, names, categories, unit price."
+    columns:
+      - name: product_id
+        description: "Unique products Identifier"
+        data_tests:
+          - not_null
+          - unique
+      - name: product_name
+        description: "Name of products."
+        data_tests:
+          - not_null
+          - unique
+      - name: category
+        description: "Product Categories"
+        data_tests:
+          - not_null
+      - name: brand
+        description: "Product brand name"
+        data_tests:
+          - not_null
+      - name: supplier_id
+        description: Unique identifier for suppliers
+        data_tests:
+          - not_null
+          - relationships:
+              field: supplier_id
+              to: ref('suppliers')
+      - name: unit_price
+        description: "Cost of each product"
+        data_tests:
+          - not_null
+      - name: ingested_at
+        description: "Date the data was ingested from source s3 bucket to dest"
+        data_tests:
+          - not_null
+      - name: source
+        description: "Data source"
+        data_tests:
+          - not_null
+
+
+  - name: stg_locations
+    description: "Information about all physical locations of stores"
+    columns:
+      - name: store_id
+        description: "Unique stores Identifier"
+        data_tests:
+          - not_null
+          - unique
+      - name: store_name
+        description: "Names of stores"
+        data_tests:
+          - not_null
+          - unique
+      - name: city
+        description: "City where stores are located."
+        data_tests:
+          - not_null
+      - name: state
+        description: "State in the US where the store is located"
+        data_tests:
+          - not_null
+      - name: region
+        description: "Region in the US where the store is located; NORTH, SOUTH etc..."
+        data_tests:
+          - not_null
+      - name: store_open_date
+        description: "Dates the stores opened at their respective locations"
+        data_tests:
+          - not_null
+      - name: ingested_at
+        description: "Date the data was ingested from source s3 bucket to dest"
+        data_tests:
+          - not_null
+      - name: source
+        description: "Data source"
+        data_tests:
+          - not_null
+
+  - name: stg_shipments
+    description: "Shipments record"
+    columns:
+      - name: shipments_id
+        description: "Unique shipments Identifier."
+        data_tests:
+          - not_null
+          - unique
+      - name: warehouse_id
+        description: "Unique warehouse Identifier"
+        data_tests:
+          - not_null
+          - relationships:
+              field: warehouse_id
+              to: ref('warehouses')
+      - name: store_id
+        description: "Unique stores Identifier"
+        data_tests:
+          - not_null
+          - relationships:
+              field: store_id
+              to: ref('locations')
+      - name: product_id
+        description: "Unique products Identifier"
+        data_tests:
+          - not_null
+          - relationships:
+              field: products_id
+              to: ref('products')
+      - name: quantity_shipped
+        description: "Number of products shipped"
+        data_tests:
+          - not_null
+      - name: shipement_date
+        description: "Timestamp of Shipments"
+        data_tests:
+          - not_null
+      - name: expected_delivery_date
+        description: "Timestamp of expected delivery date"
+        data_tests:
+          - not_null
+      - name: actual_delivery_date
+        description: "Timestamp of actual delivery date"
+        data_tests:
+          - not_null
+      - name: carrier
+        description: "Shipment company"
+        data_tests:
+          - not_null
+      - name: ingested_at
+        description: "Date the data was ingested from source s3 bucket to dest"
+        data_tests:
+          - not_null
+      - name: source
+        description: "Data source"
+        data_tests:
+          - not_null
+
+
+  - name: stg_inventory
+    description: "Shipments record"
+    columns:
+      - name: warehouse_id
+        description: "Unique warehouse Identifier"
+        data_tests:
+          - not_null
+          - relationships:
+              field: warehouse_id
+              to: ref('warehouses')
+      - name: product_id
+        description: "Unique products Identifier"
+        data_tests:
+          - not_null
+          - relationships:
+              field: products_id
+              to: ref('products')
+      - name: quantity_available
+        description: "Number of products available"
+        data_tests:
+          - not_null
+      - name: "reorder_threshold"
+        description: "The minimum inventory level at which a new order should be placed to replenish stock."
+        data_tests:
+          - not_null
+      - name: snapshot_date
+        description: "The timestamp indicating when this record was captured in the snapshot."
+        data_tests:
+          - not_null
+      - name: ingested_at
+        description: "Date the data was ingested from source s3 bucket to dest"
+        data_tests:
+          - not_null
+      - name: source
+        description: "Data source"
+        data_tests:
+          - not_null
+
+  - name: stg_transactions
+    description: "Logs inventory transactions sales daily."
+    columns:
+      - name: "0"
+        description: "UUID (inferred): A mix of string and numbers, likely a unique transaction identifier."
+        data_tests:
+          - not_null
+          - unique
+      - name: "1"
+        description: "(inferred) Unique identifier for stores"
+        data_tests:
+          - not null
+          - relationships:
+              field: store_id
+              to: ref('locations')
+      - name: "2"
+        description: "(inferred) Unique identifier for products"
+        data_tests:
+          - not_null
+          - relationships:
+                field: product_id
+                to: ref('products')
+      - name: "3"
+        description: "(inferred) Quantity bought."
+        data_tests:
+          - not_null
+      - name: "4"
+        description: "(inferred) Cost of each product"
+        data_tests:
+          - not_null
+      - name: "5"
+        description: "(inferred) Discount of products cost"
+        data_tests:
+          - not_null
+      - name: "6"
+        description: "(inferred) Total cost if discount is available"
+        data_tests:
+          - not_null
+      - name: "7"
+        description: "(inferred) Epoch/Unix time stored in microseconds"
+        data_tests:
+          - not_null
+      - name: ingested_at
+        description: "Date the data was ingested from source s3 bucket to dest"
+        data_tests:
+          - not_null
+      - name: source
+        description: "Data source"
+        data_tests:
+          - not_null

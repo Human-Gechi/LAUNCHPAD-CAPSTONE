@@ -1,10 +1,10 @@
-version: 1
+version: 2
 
 sources:
   - name: supply_chain360
     description: "SUPPLYCHAIN360 database from S3 buckets into Snowflake DW using Python script"
     database: SUPPLYCHAIN360
-    schema: raw
+    schema: RAW
 
     tables:
       - name: INVENTORY
@@ -21,7 +21,7 @@ sources:
           - name: snapshot_date
             description: "The timestamp indicating when this record was captured in the snapshot."
           - name: ingested_at
-            description: Date it was ingested from source s3 bucket
+            description: "Date it was ingested from source s3 bucket"
           - name: source
             description: "Identifies the original raw file or data source from the S3 bucket where this record was ingested."
 
@@ -30,30 +30,118 @@ sources:
         columns:
           - name: store_id
             description: "Unique identifier for each store"
-          - name: product_id
-            description: "Unique identifier for each product."
-          - name: quantity_available
-            description: "Number of inventory level."
-          - name: reorder_threshold
-            description: "The minimum inventory level at which a new order should be placed to replenish stock."
-          - name: snapshot_date
-            description: "The timestamp indicating when this record was captured in the snapshot."
+          - name: store_name
+            description: "Store name"
+          - name: city
+            description: "City where the store is located"
+          - name: state
+            description: "State where the store is located in the US."
+          - name: region
+            description: "Region in the US ; EAST, WEST, NORTH, SOUTH, MIDWEST"
+          - name: store_open_date
+            description: "Date the store was opened"
           - name: ingested_at
-            description: Date it was ingested from source s3 bucket
+            description: "Date it was ingested from source s3 bucket"
           - name: source
             description: "Identifies the original raw file or data source from the S3 bucket where this record was ingested."
 
       - name: WAREHOUSES
-        description: "Details about warehouse facilities, including id, location, state
+        description: "Details about warehouse facilities, including id, location, state"
+        columns:
+          - name: warehouse_id
+            description: "Unique identifier for each warehouse"
+          - name: city
+            description: "City where the warehouse is located"
+          - name: state
+            description: "State where the warehouse is located in the US."
+          - name: ingested_at
+            description: "Date it was ingested from source s3 bucket"
+          - name: source
+            description: "Identifies the original raw file or data source from the S3 bucket where this record was ingested."
 
       - name: PRODUCTS
         description: "Master list of products, including id, names, categories, unit price."
+        columns:
+          - name: product_id
+            description: "Unique identifier for each product"
+          - name: product_name
+            description: "Product name"
+          - name: categories
+            description: "Product Categories"
+          - name: brand
+            description: "Product brand name"
+          - name: supplier_id
+            description: "ID of the supplier"
+          - name: unit_price
+            description: "Cost of each product quantity"
+          - name: ingested_at
+            description: "Date it was ingested from source s3 bucket"
+          - name: source
+            description: "Identifies the original raw file or data source from the S3 bucket where this record was ingested."
 
       - name: SUPPLIERS
         description: "Information abour suppliers including country, supplier_name etc ..."
+        columns:
+          - name: supplier_id
+            description: "Unique identifier for each supplier"
+          - name: supplier_name
+            description: "Supplier name."
+          - name: category
+            description: "Category of the products supplied"
+          - name: country
+            description: "Country where the supplier is located"
+          - name: ingested_at
+            description: "Date it was ingested from source s3 bucket"
+          - name: source
+            description: "Identifies the original raw file or data source from the S3 bucket where this record was ingested."
 
       - name: SHIPMENTS
         description: "Information about shipments providing product id, warehouses information, carrier of shipments( UPS, FedX, DHL)."
+        columns:
+          - name: shipment_id
+            description: "Unique identifier for each shipment made"
+          - name: warehouse_id
+            description: "ID of warehouse from which products were picked up for shipment"
+          - name: store_id
+            description: "Unique identifier for each store"
+          - name: product_id
+            description: "Unique identifier for each product."
+          - name: quantity_shipped
+            description: "Quantity number"
+          - name: shipment_date
+            description: "Date of shipments"
+          - name: expected_delivery_date
+            description: "Date product is expected to arrive"
+          - name: actual_delivery_date
+            description: "Date product arrived"
+          - name: carrier
+            description: "Name of shipment carrier"
+          - name: ingested_at
+            description: "Date it was ingested from source s3 bucket"
+          - name: source
+            description: "Identifies the original raw file or data source from the S3 bucket where this record was ingested."
 
       - name: TRANSACTIONS
-        description: "Logs inventory transactions such of sales daily."
+        description: "Logs inventory transactions sales daily."
+        columns:
+          - name: "0"
+            description: "UUID (inferred): A mix of string and numbers, likely a unique transaction identifier."
+          - name: "1"
+            description: "(inferred) Unique identifier for stores"
+          - name: "2"
+            description: "(inferred) Unique identifier for products"
+          - name: "3"
+            description: "(inferred) Quantity bought."
+          - name: "4"
+            description: "(inferred) Cost of each product"
+          - name: "5"
+            description: "(inferred) Discount of products cost"
+          - name: "6"
+            description: "(inferred) Total cost if discount is available"
+          - name: "7"
+            description: "(inferred) Epoch/Unix time stored in microseconds"
+          - name: ingested_at
+            description: "Date it was ingested from source s3 bucket"
+          - name: source
+            description: "Identifies the original raw file or data source from the S3 bucket where this record was ingested."
+
