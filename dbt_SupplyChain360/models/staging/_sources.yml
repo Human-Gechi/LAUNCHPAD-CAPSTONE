@@ -1,0 +1,59 @@
+version: 1
+
+sources:
+  - name: supply_chain360
+    description: "SUPPLYCHAIN360 database from S3 buckets into Snowflake DW using Python script"
+    database: SUPPLYCHAIN360
+    schema: raw
+
+    tables:
+      - name: INVENTORY
+        description: "Contains records of current products levels for all products across all warehouses."
+        columns:
+          - name: warehouse_id
+            description: "Unique identifier for each warehouse"
+          - name: product_id
+            description: "Unique identifier for each product."
+          - name: quantity_available
+            description: "Number of inventory level."
+          - name: reorder_threshold
+            description: "The minimum inventory level at which a new order should be placed to replenish stock."
+          - name: snapshot_date
+            description: "The timestamp indicating when this record was captured in the snapshot."
+          - name: ingested_at
+            description: Date it was ingested from source s3 bucket
+          - name: source
+            description: "Identifies the original raw file or data source from the S3 bucket where this record was ingested."
+
+      - name: LOCATIONS
+        description: "Information about all physical locations of stores"
+        columns:
+          - name: store_id
+            description: "Unique identifier for each store"
+          - name: product_id
+            description: "Unique identifier for each product."
+          - name: quantity_available
+            description: "Number of inventory level."
+          - name: reorder_threshold
+            description: "The minimum inventory level at which a new order should be placed to replenish stock."
+          - name: snapshot_date
+            description: "The timestamp indicating when this record was captured in the snapshot."
+          - name: ingested_at
+            description: Date it was ingested from source s3 bucket
+          - name: source
+            description: "Identifies the original raw file or data source from the S3 bucket where this record was ingested."
+
+      - name: WAREHOUSES
+        description: "Details about warehouse facilities, including id, location, state
+
+      - name: PRODUCTS
+        description: "Master list of products, including id, names, categories, unit price."
+
+      - name: SUPPLIERS
+        description: "Information abour suppliers including country, supplier_name etc ..."
+
+      - name: SHIPMENTS
+        description: "Information about shipments providing product id, warehouses information, carrier of shipments( UPS, FedX, DHL)."
+
+      - name: TRANSACTIONS
+        description: "Logs inventory transactions such of sales daily."
