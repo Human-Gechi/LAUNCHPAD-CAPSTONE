@@ -12,7 +12,7 @@ locals {
     "shipments",
     "suppliers",
     "warehouses",
-    "locations",
+    "stores",
     "transactions"
   ]
   s3_folders_in_raw = [ for folder in local.s3_folders : "raw/${folder}/" ]
