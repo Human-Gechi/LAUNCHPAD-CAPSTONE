@@ -20,7 +20,7 @@ dst_client = S3ClientFactory.create_client(DST_ACCESS_KEY, DST_SECRET_KEY, DST_R
 base = 'raw/'
 
 pq_to_sf_type = {
-    "Int64": "NUMBER",    
+    "Int64": "NUMBER",
     "int64": "NUMBER",
     "Float64": "FLOAT",
     "float64": "FLOAT",
@@ -130,6 +130,7 @@ class SnowFlake:
                 obj = self.dst_client.get_object(Bucket=self.dst_bucket, Key=key)
                 data = obj['Body'].read()
                 df = pd.read_parquet(io.BytesIO(data))
+                df = df.drop_duplicates()
                 dfs.append(df)
 
             if not dfs:
