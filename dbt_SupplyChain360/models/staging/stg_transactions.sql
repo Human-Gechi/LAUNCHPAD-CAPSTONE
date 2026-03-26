@@ -7,6 +7,6 @@ select distinct
     cast("5" as float) as discount,              -- Discount of products cost
     cast("6" as float) as total_cost,            -- Total cost if discount is available
     cast("7" as bigint) as transaction_ts,       -- Epoch/Unix time stored in microseconds
-    cast(ingestion_date as date),                              -- Time of ingestion
-    cast(origin as varchar)                                       -- Data source
+    cast(ingestion_date as date) as ingestion_date,                              -- Time of ingestion
+    cast(origin as varchar) as origin                                      -- Data source
 from {{ source('supplychain360', 'transactions') }}

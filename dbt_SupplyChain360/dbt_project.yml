@@ -27,13 +27,15 @@ clean-targets:         # directories to be removed by `dbt clean`
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
 
 models:
-  supply_chain360:
+  supplychain360:
     staging:
       +schema: staging
       +materialized: view
+      +tags: staging
     intermediate:
       +schema: intermediate
       +materialized: view
+      +tags: intermediate
     marts:
       +schema: mart
       +materialized: table
