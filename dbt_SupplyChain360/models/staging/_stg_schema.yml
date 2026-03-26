@@ -18,11 +18,11 @@ models:
         description: "State where the warehouse is located in the US"
         data_tests:
           - not_null
-      - name: ingested_at
+      - name: ingestion_date
         description: "Date the data was ingested from source s3 bucket to dest"
         data_tests:
           - not_null
-      - name: source
+      - name: origin
         description: "Data source"
         data_tests:
           - not_null
@@ -48,11 +48,11 @@ models:
         description: "Country supplier is based in"
         data_tests:
           - not_null
-      - name: ingested_at
+      - name: ingestion_date
         description: "Date the data was ingested from source s3 bucket to dest"
         data_tests:
           - not_null
-      - name: source
+      - name: origin
         description: "Data source"
         data_tests:
           - not_null
@@ -84,16 +84,16 @@ models:
           - not_null
           - relationships:
               field: supplier_id
-              to: ref('suppliers')
+              to: source('supplychain360', 'suppliers')
       - name: unit_price
         description: "Cost of each product"
         data_tests:
           - not_null
-      - name: ingested_at
+      - name: ingestion_date
         description: "Date the data was ingested from source s3 bucket to dest"
         data_tests:
           - not_null
-      - name: source
+      - name: origin
         description: "Data source"
         data_tests:
           - not_null
@@ -128,11 +128,11 @@ models:
         description: "Dates the stores opened at their respective locations"
         data_tests:
           - not_null
-      - name: ingested_at
+      - name: ingestion_date
         description: "Date the data was ingested from source s3 bucket to dest"
         data_tests:
           - not_null
-      - name: source
+      - name: origin
         description: "Data source"
         data_tests:
           - not_null
@@ -140,7 +140,7 @@ models:
   - name: stg_shipments
     description: "Shipments record"
     columns:
-      - name: shipments_id
+      - name: shipment_id
         description: "Unique shipments Identifier."
         data_tests:
           - not_null
@@ -151,26 +151,26 @@ models:
           - not_null
           - relationships:
               field: warehouse_id
-              to: ref('warehouses')
+              to: source('supplychain360', 'warehouses')
       - name: store_id
         description: "Unique stores Identifier"
         data_tests:
           - not_null
           - relationships:
               field: store_id
-              to: ref('locations')
+              to: source('supplychain360', 'stores')
       - name: product_id
         description: "Unique products Identifier"
         data_tests:
           - not_null
           - relationships:
-              field: products_id
-              to: ref('products')
+              field: product_id
+              to: source('supplychain360', 'products')
       - name: quantity_shipped
         description: "Number of products shipped"
         data_tests:
           - not_null
-      - name: shipement_date
+      - name: shipment_date
         description: "Timestamp of Shipments"
         data_tests:
           - not_null
@@ -186,11 +186,11 @@ models:
         description: "Shipment company"
         data_tests:
           - not_null
-      - name: ingested_at
+      - name: ingestion_date
         description: "Date the data was ingested from source s3 bucket to dest"
         data_tests:
           - not_null
-      - name: source
+      - name: origin
         description: "Data source"
         data_tests:
           - not_null
@@ -205,14 +205,14 @@ models:
           - not_null
           - relationships:
               field: warehouse_id
-              to: ref('warehouses')
+              to: source('supplychain360', 'warehouses')
       - name: product_id
         description: "Unique products Identifier"
         data_tests:
           - not_null
           - relationships:
-              field: products_id
-              to: ref('products')
+              field: product_id
+              to: source('supplychain360', 'products')
       - name: quantity_available
         description: "Number of products available"
         data_tests:
@@ -225,11 +225,11 @@ models:
         description: "The timestamp indicating when this record was captured in the snapshot."
         data_tests:
           - not_null
-      - name: ingested_at
+      - name: ingestion_date
         description: "Date the data was ingested from source s3 bucket to dest"
         data_tests:
           - not_null
-      - name: source
+      - name: origin
         description: "Data source"
         data_tests:
           - not_null
@@ -237,50 +237,50 @@ models:
   - name: stg_transactions
     description: "Logs inventory transactions sales daily."
     columns:
-      - name: "0"
+      - name: transaction_id
         description: "UUID (inferred): A mix of string and numbers, likely a unique transaction identifier."
         data_tests:
           - not_null
           - unique
-      - name: "1"
+      - name: store_id
         description: "(inferred) Unique identifier for stores"
         data_tests:
-          - not null
+          - not_null
           - relationships:
               field: store_id
-              to: ref('locations')
-      - name: "2"
+              to: source('supplychain360', 'stores')
+      - name: product_id
         description: "(inferred) Unique identifier for products"
         data_tests:
           - not_null
           - relationships:
-                field: product_id
-                to: ref('products')
-      - name: "3"
+              field: product_id
+              to: source('supplychain360', 'products')
+      - name: quantity
         description: "(inferred) Quantity bought."
         data_tests:
           - not_null
-      - name: "4"
+      - name: unit_price
         description: "(inferred) Cost of each product"
         data_tests:
           - not_null
-      - name: "5"
+      - name: discount
         description: "(inferred) Discount of products cost"
         data_tests:
           - not_null
-      - name: "6"
+      - name: total_cost
         description: "(inferred) Total cost if discount is available"
         data_tests:
           - not_null
-      - name: "7"
+      - name: transaction_ts
         description: "(inferred) Epoch/Unix time stored in microseconds"
         data_tests:
           - not_null
-      - name: ingested_at
+      - name: ingestion_date
         description: "Date the data was ingested from source s3 bucket to dest"
         data_tests:
           - not_null
-      - name: source
+      - name: origin
         description: "Data source"
         data_tests:
           - not_null

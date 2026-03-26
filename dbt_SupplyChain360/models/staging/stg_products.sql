@@ -1,10 +1,10 @@
 select distinct
-    product_id,                 -- Unique identifier for product
-    product_name,               -- Name of the product
-    category,                   -- Product category
-    brand,                      -- Product brand
-    supplier_id,                -- Supplier of the product
-    unit_price,                 -- Price per unit
-    ingestion_date,             -- Timestamp when data was ingested
-    origin                      -- Source system 
+    cast(product_id as varchar),                -- Unique identifier for product
+    cast(product_name as varchar)            -- Name of the product
+    cast(category as varchar),                   -- Product category
+    cast(brand as varchar)                    -- Product brand
+    cast(supplier_id as varchar),                -- Supplier of the product
+    cast(unit_price as float),                 -- Price per unit
+    cast(ingestion_date as date),             -- Timestamp when data was ingested
+    cast(origin as varchar)                    -- Source system
 from {{ source('supplychain360', 'products') }}
