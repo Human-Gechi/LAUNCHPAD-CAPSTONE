@@ -99,7 +99,7 @@ models:
           - not_null
 
 
-  - name: stg_locations
+  - name: stg_stores
     description: "Information about all physical locations of stores"
     columns:
       - name: store_id
