@@ -27,9 +27,9 @@ class Postgres:
         dst_bucket (str): AWS s3 destination bucket
 
     Methods:
-        connect_to_rds:
+        connect_rds:
             Makes a connection to AWS Relational Database Service
-        get_table_name:
+        get_table_names:
             Retrieves names of tables in AWS RDS
         ingest_data: 
             Ingests data from RDS to s3 destination bucket
@@ -42,8 +42,7 @@ class Postgres:
         self.password = os.getenv("DB_PASSWORD")
         self.dst_client = dst_client
         self.dst_bucket = dst_bucket
-        self.data_source = "aws_rds"
-
+        self.data_source = 'rds'
 
     def connect_rds(self):
         """
@@ -53,15 +52,34 @@ class Postgres:
         Returns:
             conn: A connection object to the RDS instance.
         """
-        conn = psycopg2.connect(
-            host=self.host,
-            port=self.port,
-            user=self.user,
-            password=self.password,
-            dbname=self.db
-        )
-        ingest_logger.info("✅ Connection to AWS RDS secured")
-        return conn
+        retry = 5
+        for attempt in range(retry):
+            try:
+                conn = psycopg2.connect(
+                    host=self.host,
+                    port=self.port,
+                    user=self.user,
+                    password=self.password,
+                    dbname=self.db,
+                    sslmode='require',
+                    connect_timeout=30
+                )
+                try:
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT 1;")
+                        cur.fetchone()
+                except Exception as e:
+                    ingest_logger.error(f"❌ Connection test failed: {e}")
+                    conn.close()
+                    continue
+                ingest_logger.info("✅ Connection to AWS RDS secured and tested")
+                return conn
+            except psycopg2.OperationalError as e:
+                ingest_logger.error(f"{e}")
+                time.sleep(5)
+        ingest_logger.error("❌ Could not establish a valid connection to AWS RDS after retries.")
+        return None
+
 
     def get_table_names(self):
         """
@@ -76,25 +94,29 @@ class Postgres:
         psycopg2.OperationalError : If an unusual error occured. Errors like Network issues
     
         """
-        conn = self.connect_rds()
-        cur = conn.cursor()
         try:
-            with open(sql_path) as f:
-                query = f.read()
-                cur.execute(query)
-                rows = cur.fetchall()
-                table_names = [row[0] for row in rows]
-                if table_names:
-                    ingest_logger.info(f"✅ Number of tables present {len(table_names)}")
-                else:
-                    ingest_logger.warning("⚠️ No table names retrieved from the database.")
-                return table_names
+            conn = self.connect_rds()
+            if conn is None:
+                ingest_logger.error("❌ Could not establish a connection to AWS RDS.")
+                return []
+            with conn:
+                with conn.cursor() as cur:
+                    with open(sql_path) as f:
+                        query = f.read()
+                        cur.execute(query)
+                        rows = cur.fetchall()
+                        table_names = [row[0] for row in rows]
+                        if table_names:
+                            ingest_logger.info(f"✅ Number of tables present {len(table_names)}")
+                        else:
+                            ingest_logger.warning("⚠️ No table names retrieved from the database.")
+                    return table_names
         except psycopg2.ProgrammingError as e:
             ingest_logger.error(f"❌ Invalid query {e}")
+            return []
         except psycopg2.OperationalError as e:
             ingest_logger.error(f"❌ An unexpected error occurred: {e}")
-
-
+            return []
 
     def ingest_data(self, source, batch_size=10000, max_attempts=5, base_delay=1):
         """
@@ -160,5 +182,3 @@ class Postgres:
             else:
                 ingest_logger.info(f"⏩ Skipping {prefix}/{table} exists in s3")
 
-post = Postgres(dst_client, DST_BUCKET)
-print(post.get_table_names())

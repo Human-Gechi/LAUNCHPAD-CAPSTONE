@@ -20,10 +20,13 @@ dst_client = S3ClientFactory.create_client(DST_ACCESS_KEY, DST_SECRET_KEY, DST_R
 base = 'raw/'
 
 pq_to_sf_type = {
-    'int64': 'NUMBER',
-    'float': 'FLOAT',
-    'string': 'STRING',
-    'bool': 'BOOLEAN'
+    "Int64": "NUMBER",    
+    "int64": "NUMBER",
+    "Float64": "FLOAT",
+    "float64": "FLOAT",
+    "str": "VARCHAR",
+    "object": "VARCHAR",
+    "bool": "BOOLEAN"
 }
 
 class SnowFlake:
@@ -65,7 +68,7 @@ class SnowFlake:
         Returns:
             Values specifying data type in snowflake
         """
-        return pq_to_sf_type.get(pq_dtype, "STRING")
+        return pq_to_sf_type.get(pq_dtype)
 
     def table_exists(self, cur, table_name):
         """
@@ -133,11 +136,12 @@ class SnowFlake:
                 ingest_logger.info(f"No parquet files found in {directory}, ⏩ Skipping.....")
                 continue
             combined_df = pd.concat(dfs, ignore_index=True)
+            combined_df.columns = [c.upper() for c in combined_df.columns]
 
             columns = []
             for col, dtype in zip(combined_df.columns, combined_df.dtypes):
-                sf_type = self.parquet_dtypes_to_snowflake(str(dtype))
-                columns.append(f'"{col.upper()}" {sf_type}')
+                    sf_type = self.parquet_dtypes_to_snowflake(dtype.name)
+                    columns.append(f'{col} {sf_type}')
             columns_sql = ", ".join(columns)
             create_sql = f'CREATE TABLE IF NOT EXISTS {table} ({columns_sql});'
 
