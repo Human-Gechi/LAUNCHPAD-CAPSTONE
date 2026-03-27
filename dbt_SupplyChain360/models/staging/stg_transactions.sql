@@ -1,12 +1,12 @@
 select distinct
-    cast("0" as varchar) as transaction_id,      -- UUID (unique transaction identifier)
-    cast("1" as varchar) as store_id,            -- Unique identifier for stores
-    cast("2" as varchar) as product_id,          -- Unique identifier for products
-    cast("3" as number) as quantity,             -- Quantity bought
-    cast("4" as float) as unit_price,            -- Cost of each product
-    cast("5" as float) as discount,              -- Discount of products cost
-    cast("6" as float) as total_cost,            -- Total cost if discount is available
-    cast("7" as bigint) as transaction_ts,       -- Epoch/Unix time stored in microseconds
-    cast(ingestion_date as date) as ingestion_date,                              -- Time of ingestion
-    cast(origin as varchar) as origin                                      -- Data source
+    coalesce(cast("0" as varchar), 'UNKNOWN') as transaction_id,           -- Transaction ID
+    coalesce(cast("1" as varchar), 'STORE-XXXX') as store_id,              -- Store ID
+    coalesce(cast("2" as varchar), 'PROD-XXXX') as product_id,             -- Product ID
+    coalesce(cast("3" as number), 0) as quantity,                          -- Quantity bought
+    coalesce(cast("4" as float), 0.0) as unit_price,                       -- Unit price
+    coalesce(cast("5" as float), 0.0) as discount,                         -- Discount
+    coalesce(cast("6" as float), 0.0) as total_cost,                       -- Total cost
+    to_timestamp_ntz(cast("7" as number) / 1000000) as transaction_timestamp_utc, -- Transaction timestamp (UTC)
+    coalesce(cast(ingestion_date as date), current_date) as ingestion_date, -- Ingestion date
+    coalesce(cast(origin as varchar), 'UNKNOWN') as origin                  -- Data source
 from {{ source('supplychain360', 'transactions') }}
