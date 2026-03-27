@@ -1,26 +1,23 @@
 # Built-in
 from datetime import datetime
 
-
-# Get Timestamp
 def time_stamp() -> datetime:
     """
-    Full timestamp for file uniqueness
+    Full timestamp for file metadata
 
     Returns:
         timestamp
     """
-    return datetime.utcnow().strftime("%Y-%m-%d")
-
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def full_timestamp() -> datetime:
     """
-    Full UTC timestamp for file uniqueness
+    Full local (GMT+1) timestamp for file uniqueness
 
     Returns:
         timestamp
     """
-    return datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    return datetime.now().strftime("%Y%m%dT%H%M%SZ")
 
 
 # File path for files

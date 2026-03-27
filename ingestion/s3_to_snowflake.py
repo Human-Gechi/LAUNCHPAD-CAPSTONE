@@ -4,6 +4,7 @@ import pandas as pd
 from dotenv import load_dotenv
 import pandas as pd
 import io
+import time
 
 from ingestion.s3_to_s3 import S3ClientFactory
 from snowflake.connector.pandas_tools import write_pandas
@@ -116,61 +117,71 @@ class SnowFlake:
         return parquet_files
 
     def create_tables_from_directories(self):
-        conn = self.conn_sf()
-        cur = conn.cursor()
+        max_retries = 5
+        attempt = 1
+        while attempt <= max_retries:
+            try:
+                with self.conn_sf() as conn:
+                    with conn.cursor() as cur:
+                        directories = self.get_directories()
+                        for directory in directories:
+                            table = directory.upper()
+                            ingest_logger.info(f"🔄️ Processing directory: {directory} -> table: {table}")
 
-        directories = self.get_directories()
-        for directory in directories:
-            table = directory.upper()
-            ingest_logger.info(f"🔄️ Processing directory: {directory} -> table: {table}")
+                            parquet_files = self.get_parquet_files_in_dir(directory)
+                            dfs = []
+                            for key in parquet_files:
+                                obj = self.dst_client.get_object(Bucket=self.dst_bucket, Key=key)
+                                data = obj['Body'].read()
+                                df = pd.read_parquet(io.BytesIO(data))
+                                df = df.drop_duplicates()
+                                dfs.append(df)
 
-            parquet_files = self.get_parquet_files_in_dir(directory)
-            dfs = []
-            for key in parquet_files:
-                obj = self.dst_client.get_object(Bucket=self.dst_bucket, Key=key)
-                data = obj['Body'].read()
-                df = pd.read_parquet(io.BytesIO(data))
-                df = df.drop_duplicates()
-                dfs.append(df)
+                            if not dfs:
+                                ingest_logger.info(f"No parquet files found in {directory}, ⏩ Skipping.....")
+                                continue
+                            combined_df = pd.concat(dfs, ignore_index=True)
+                            combined_df.columns = [c.upper() for c in combined_df.columns]
 
-            if not dfs:
-                ingest_logger.info(f"No parquet files found in {directory}, ⏩ Skipping.....")
-                continue
-            combined_df = pd.concat(dfs, ignore_index=True)
-            combined_df.columns = [c.upper() for c in combined_df.columns]
+                            columns = []
+                            for col, dtype in zip(combined_df.columns, combined_df.dtypes):
+                                sf_type = self.parquet_dtypes_to_snowflake(dtype.name)
+                                columns.append(f'{col} {sf_type}')
+                            columns_sql = ", ".join(columns)
+                            create_sql = f'CREATE TABLE IF NOT EXISTS {table} ({columns_sql});'
 
-            columns = []
-            for col, dtype in zip(combined_df.columns, combined_df.dtypes):
-                    sf_type = self.parquet_dtypes_to_snowflake(dtype.name)
-                    columns.append(f'{col} {sf_type}')
-            columns_sql = ", ".join(columns)
-            create_sql = f'CREATE TABLE IF NOT EXISTS {table} ({columns_sql});'
+                            if not self.table_exists(cur, table):
+                                ingest_logger.info(f"Creating and inserting into new table {table} in attempt-{attempt}")
+                                cur.execute(create_sql)
+                                write_pandas(conn, combined_df, table)
+                            else:
+                                staging_table = f"{table}_STAGING"
+                                cur.execute(f"CREATE OR REPLACE TABLE {staging_table} ({columns_sql});")
+                                write_pandas(conn, combined_df, staging_table)
+                                merge_sql = f"""
+                                    MERGE INTO {table} t
+                                    USING {staging_table} s
+                                    ON ({" AND ".join([f't."{col}" = s."{col}"' for col in combined_df.columns])})
+                                    WHEN NOT MATCHED THEN
+                                    INSERT ({', '.join([f'"{col}"' for col in combined_df.columns])})
+                                    VALUES ({', '.join([f's."{col}"' for col in combined_df.columns])});
+                                """
+                                cur.execute(merge_sql)
+                                count = cur.fetchone()[0] if cur.rowcount is not None else 0
+                                ingest_logger.info(f"📌 Upserted {count} rows into {table} in attempt-{attempt}")
+                                cur.execute(f"DROP TABLE IF EXISTS {staging_table}")
+                                ingest_logger.info("✅ Staging tables dropped")
 
-            if not self.table_exists(cur, table):
-                ingest_logger.info(f"Creating and inserting into new table {table}")
-                cur.execute(create_sql)
-                write_pandas(conn, combined_df, table)
-            else:
-                staging_table = f"{table}_STAGING"
-                cur.execute(f"CREATE OR REPLACE TABLE {staging_table} ({columns_sql});")
-                write_pandas(conn, combined_df, staging_table)
-                merge_sql = f"""
-                    MERGE INTO {table} t
-                    USING {staging_table} s
-                    ON ({" AND ".join([f't."{col}" = s."{col}"' for col in combined_df.columns])})
-                    WHEN NOT MATCHED THEN
-                      INSERT ({', '.join([f'"{col}"' for col in combined_df.columns])})
-                      VALUES ({', '.join([f's."{col}"' for col in combined_df.columns])});
+                break
+            except Exception as e:
+                ingest_logger.error(f"❌ Error during Snowflake ingestion: {e}")
+                if attempt == max_retries:
+                    ingest_logger.error(f"❌ Max retries reached. Skipping operation.")
+                    break
+                backoff = 2 ** (attempt - 1)
+                ingest_logger.info(f"Retrying in {backoff} seconds (attempt {attempt}/{max_retries})...")
+                time.sleep(backoff)
+                attempt += 1
 
-                """
-                cur.execute(merge_sql)
-                count = cur.fetchone()[0]
-                ingest_logger.info(f"📌 Upserted {count} rows into {table}")
-                cur.execute(f"DROP TABLE IF EXISTS {staging_table}")
-                ingest_logger.info("✅ Staging tables dropped")
-
-
-        cur.close()
-        conn.close()
 sf = SnowFlake(dst_client, DST_BUCKET)
 sf.create_tables_from_directories()

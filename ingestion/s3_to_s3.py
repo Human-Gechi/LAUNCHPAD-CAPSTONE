@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+import time
 from io import StringIO
 
 import boto3
@@ -136,31 +137,43 @@ class MoveData:
                         dfs.append((df, filename))
         return dfs
 
+
     def ingest_files(self, source: str):
         global folders
-        try:
-            for folder, filetype in folders.items():
-                prefix = f"{source}/{folder}"
+        max_retries = 5
+        for folder, filetype in folders.items():
+            prefix = f"{source}/{folder}"
+            attempt = 1
+            while attempt <= max_retries:
+                try:
+                    if filetype == "csv":
+                        csv_files = self.process_csv_files(prefix)
+                        for df, filename in csv_files:
+                            base = os.path.splitext(filename)[0]
+                            if not self.exists_by_basename(prefix, base):
+                                write_parquet(df, self.data_source, prefix, base)
+                                ingest_logger.info(f"✅ {prefix}/{base} written to s3 in attempt-{attempt}")
+                            else:
+                                ingest_logger.info(f"⏩ Skipped {prefix}/{base} (file with base file '{base}' exists)")
+                        break
 
-                if filetype == "csv":
-                    csv_files = self.process_csv_files(prefix)
-                    for df, filename in csv_files:
-                        base = os.path.splitext(filename)[0]
-                        if not self.exists_by_basename(prefix, base):
-                            write_parquet(df, "s3", prefix, base)
-                            ingest_logger.info(f"✅ {prefix}/{base} written to s3")
-                        else:
-                            ingest_logger.info(f"⏩ Skipped {prefix}/{base} (file with base file '{base}' exists)")
+                    elif filetype == "json":
+                        json_files = self.process_json_files(prefix)
+                        for df, filename in json_files:
+                            base = os.path.splitext(filename)[0]
+                            if not self.exists_by_basename(prefix, base):
+                                write_parquet(df, self.data_source, prefix, base)
+                                ingest_logger.info(f"✅ {prefix}/{base} written to s3 in attempt-{attempt}")
+                            else:
+                                ingest_logger.info(f"⏩ Skipped {prefix}/{base} (file with base file '{base}' exists)")
+                        break
 
-                elif filetype == "json":
-                    json_files = self.process_json_files(prefix)
-                    for df, filename in json_files:
-                        base = os.path.splitext(filename)[0]
-                        if not self.exists_by_basename(prefix, base):
-                            write_parquet(df, self.data_source, prefix, base)
-                            ingest_logger.info(f"✅ {prefix}/{base} written to s3")
-                        else:
-                            ingest_logger.info(f"⏩ Skipped {prefix}/{base} (file with base file '{base}' exists)")
-        except Exception as e:
-            ingest_logger.error(f"❌ Error during ingestion: {e}")
-
+                except Exception as e:
+                    ingest_logger.error(f"❌ Error during ingestion of {prefix}: {e}")
+                    if attempt == max_retries:
+                        ingest_logger.error(f"❌ Max trials reached for {prefix}. Skipping insertion, try again later")
+                        break
+                    backoff = 2 ** (attempt - 1)
+                    ingest_logger.info(f"Retrying {prefix} in {backoff} seconds (attempt {attempt}/{max_retries})...")
+                    time.sleep(backoff)
+                    attempt += 1

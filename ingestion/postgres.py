@@ -134,6 +134,9 @@ class Postgres:
         """
         conn = self.connect_rds()
         cur = conn.cursor()
+        if conn is None:
+            ingest_logger.error("❌ Database connection failed")
+            return None
         table_names = self.get_table_names()
         data_class = MoveData(None, self.dst_client, None, self.dst_bucket)
         prefix = f"{source}/transactions"
