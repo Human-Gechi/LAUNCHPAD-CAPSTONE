@@ -7,6 +7,6 @@ select distinct
     coalesce(cast("5" as float), 0.0) as discount,                         -- Discount
     coalesce(cast("6" as float), 0.0) as total_cost,                       -- Total cost
     to_timestamp_ntz(cast("7" as number) / 1000000) as transaction_timestamp_utc, -- Transaction timestamp (UTC)
-    coalesce(cast(ingestion_date as date), current_date) as ingestion_date, -- Ingestion date
-    coalesce(cast(origin as varchar), 'UNKNOWN') as origin                  -- Data source
+    cast(ingestion_date as timestamp) as ingestion_date, -- Ingestion date
+    cast(origin as varchar) as origin                  -- Data source
 from {{ source('supplychain360', 'transactions') }}

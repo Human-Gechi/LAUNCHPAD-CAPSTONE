@@ -6,9 +6,10 @@ select distinct
     coalesce(cast(region as varchar), 'UNKNOWN') as region,                       -- Regions
     coalesce(
         to_date(store_open_date, 'DD/MM/YYYY'),
+        to_date(store_open_date, 'MM/DD/YYYY'),
         to_date(store_open_date, 'YYYY-MM-DD'),
         current_date
     ) as store_open_date,                                                         -- Date store opened
-    cast(ingestion_date as date) as ingestion_date,                               -- Timestamp when data was ingested
+    cast(ingestion_date as timestamp) as ingestion_date,                               -- Timestamp when data was ingested
     cast(origin as varchar) as origin                                             -- Source system
 from {{ source('supplychain360', 'stores') }}
