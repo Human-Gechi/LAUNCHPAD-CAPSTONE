@@ -107,7 +107,7 @@ class Postgres:
                         rows = cur.fetchall()
                         table_names = [row[0] for row in rows]
                         if table_names:
-                            ingest_logger.info(f"✅ Number of tables present {len(table_names)}")
+                            ingest_logger.info(f"✅ Number of tables present: {len(table_names)}")
                         else:
                             ingest_logger.warning("⚠️ No table names retrieved from the database.")
                     return table_names
@@ -133,7 +133,6 @@ class Postgres:
             psycopg2.OperationalError : If an unusual error occured. Errors like Network issues
         """
         conn = self.connect_rds()
-        cur = conn.cursor()
         if conn is None:
             ingest_logger.error("❌ Database connection failed")
             return None
@@ -146,28 +145,29 @@ class Postgres:
             while True:
                 attempt = 1
                 while attempt <= max_attempts:
-                    try:
-                        query = f"SELECT * FROM {table} LIMIT {batch_size} OFFSET {offset}"
-                        cur.execute(query)
-                        rows = cur.fetchall()
-                        if not rows:
+                    with conn.cursor() as cur:
+                        try:
+                            query = f"SELECT * FROM {table} LIMIT {batch_size} OFFSET {offset}"
+                            cur.execute(query)
+                            rows = cur.fetchall()
+                            if not rows:
+                                break
+                            df = pd.DataFrame(rows)
+                            batches.append(df)
+                            offset += batch_size
                             break
-                        df = pd.DataFrame(rows)
-                        batches.append(df)
-                        offset += batch_size
-                        break
-                    except psycopg2.OperationalError as e:
-                        ingest_logger.error(f"⚠️ Error on attempt {attempt} for {table}: {e}")
-                        if attempt == max_attempts:
-                            ingest_logger.error(f"❌ Max attempts reached for {table} batch at offset {offset}. Skipping batch.")
+                        except psycopg2.OperationalError as e:
+                            ingest_logger.error(f"⚠️ Error on attempt {attempt} for {table}: {e}")
+                            if attempt == max_attempts:
+                                ingest_logger.error(f"❌ Max attempts reached for {table} batch at offset {offset}. Skipping batch.")
+                                break
+                            backoff = base_delay * (2 ** (attempt - 1))
+                            ingest_logger.warning(f"⚠️ Retrying in {backoff}s.............")
+                            time.sleep(backoff)
+                            attempt += 1
+                        except Exception as e:
+                            ingest_logger.error(f"❌ Error fetching data from {table}: {e}")
                             break
-                        backoff = base_delay * (2 ** (attempt - 1))
-                        ingest_logger.warning(f"⚠️ Retrying in {backoff}s.............")
-                        time.sleep(backoff)
-                        attempt += 1
-                    except Exception as e:
-                        ingest_logger.error(f"❌ Error fetching data from {table}: {e}")
-                        break
                 else:
                     break
                 if not rows:
@@ -176,7 +176,8 @@ class Postgres:
             if not batches:
                 ingest_logger.warning(f"⚠️ Table {table} is empty.")
                 continue
-
+            ingest_logger.info(f"Extracting {table}..... from db")
+            
             final_df = pd.concat(batches, ignore_index=True)
             file_existence = data_class.exists_by_basename(prefix, table)
             if not file_existence:

@@ -80,6 +80,7 @@ def write_parquet(df: pd.DataFrame, data_source: str, folder: str, filename: str
     buffer = BytesIO()
 
     # Convert DataFrame to Pyarrow table
+    df.columns = df.columns.map(str)
     table = pa.Table.from_pandas(df)
 
     # Write table to parquet format
