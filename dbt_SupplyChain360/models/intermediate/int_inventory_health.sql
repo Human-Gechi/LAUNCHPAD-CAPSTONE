@@ -1,0 +1,3 @@
+with inventory as (
+    select
+)

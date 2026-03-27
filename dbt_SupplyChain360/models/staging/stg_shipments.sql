@@ -3,7 +3,7 @@ select distinct
     coalesce(cast(warehouse_id as varchar), 'WH-XXX') as warehouse_id,            -- Warehouse from which shipment originated
     coalesce(cast(store_id as varchar), 'STORE-XXXX') as store_id,                -- Store receiving the shipment
     coalesce(cast(product_id as varchar), 'PROD-XXXX') as product_id,             -- Product being shipped
-    coalesce(cast(quantity_shipped as number), 0) as quantity_shipped,            -- Number of units shipped
+    coalesce(abs(cast(quantity_shipped as number)), 0) as quantity_shipped,            -- Number of units shipped
     coalesce(cast(shipment_date as date), current_date) as shipment_date,         -- Date shipment was sent
     coalesce(cast(expected_delivery_date as date), current_date) as expected_delivery_date, -- Expected delivery date
     coalesce(cast(actual_delivery_date as date), current_date) as actual_delivery_date,     -- Actual delivery date

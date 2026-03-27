@@ -278,7 +278,7 @@ models:
         description: "(inferred) Total cost if discount is available"
         tests:
           - not_null
-      - name: transaction_ts
+      - name: transaction_timestamp_utc
         description: "(inferred) Epoch/Unix time stored in microseconds"
         tests:
           - not_null
