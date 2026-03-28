@@ -1,3 +1,8 @@
+{{ config(
+    materialized='incremental',
+    unique_key = 'transaction_id'
+    )
+}}
 select distinct
     coalesce(cast("0" as varchar), 'UNKNOWN') as transaction_id,
     coalesce(cast("1" as varchar), 'STORE-XXXX') as store_id,
@@ -16,3 +21,7 @@ select distinct
     cast(ingestion_date as timestamp) as ingestion_date,
     cast(origin as varchar) as origin
 from {{ source('supplychain360', 'transactions') }}
+
+{% if is_incremental() %}
+    WHERE ingestion_date >= (SELECT MAX(ingestion_date) FROM {{ this }})
+{% endif %}

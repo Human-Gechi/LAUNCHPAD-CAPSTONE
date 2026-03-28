@@ -1,3 +1,8 @@
+{{ config(
+    materialized='incremental',
+    unique_key = 'shipment_id'
+    )
+}}
 select distinct
     coalesce(cast(shipment_id as varchar), 'UNKNOWN') as shipment_id,             -- Unique identifier for each shipment
     coalesce(cast(warehouse_id as varchar), 'WH-XXX') as warehouse_id,            -- Warehouse from which shipment originated
@@ -11,3 +16,7 @@ select distinct
     cast(ingestion_date as timestamp) as ingestion_date,                               -- Timestamp when data was ingested
     cast(origin as varchar) as origin                                             -- Source system
 from {{ source('supplychain360', 'shipments') }}
+
+{% if is_incremental() %}
+    WHERE ingestion_date >= (SELECT MAX(ingestion_date) FROM {{ this }})
+{% endif %}
