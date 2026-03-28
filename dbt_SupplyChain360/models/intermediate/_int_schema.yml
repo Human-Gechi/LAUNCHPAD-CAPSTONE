@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: int_warehouse_to_store_efficiency
+    description: ""
+  - name: int_transactions_enriched
+    description: ""
+  - name: int_ghost_products
+    description: ""
+  - name: int_inventory_health
+    description: ""
+  - name: int_shipments_performance
+    description: ""
+
