@@ -277,5 +277,3 @@ class SnowFlake:
                 else:
                     ingest_logger.error(f"Failed to complete pipeline after {max_retries} attempts.")
                     break
-sf = SnowFlake(dst_client, DST_BUCKET)
-sf.create_tables_from_directories()

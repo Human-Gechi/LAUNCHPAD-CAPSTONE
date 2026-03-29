@@ -1,6 +1,7 @@
 from ingestion.postgres import Postgres
 from ingestion.sheets import SheetsManager, SheetsParser
 from ingestion.s3_to_s3 import src_client, dst_client, SRC_BUCKET, DST_BUCKET, MoveData
+from ingestion.s3_to_snowflake import SnowFlake
 
 base = 'raw'
 def main():
@@ -14,6 +15,9 @@ def main():
 
     post = Postgres(dst_client, DST_BUCKET)
     print(post.ingest_data(base))
+
+    sf = SnowFlake(dst_client, DST_BUCKET)
+    sf.create_tables_from_directories()
 
 if __name__ == "__main__":
     main()
