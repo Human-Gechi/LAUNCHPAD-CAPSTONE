@@ -13,8 +13,9 @@ select distinct
     coalesce(cast(expected_delivery_date as date), current_date) as expected_delivery_date, -- Expected delivery date
     coalesce(cast(actual_delivery_date as date), current_date) as actual_delivery_date,     -- Actual delivery date
     coalesce(cast(carrier as varchar), 'UNKNOWN') as carrier,                     -- Shipping carrier
-    cast(ingestion_date as timestamp) as ingestion_date,                               -- Timestamp when data was ingested
-    cast(origin as varchar) as origin                                             -- Source system
+    cast(s3_extraction_date as timestamp_ntz) as ingestion_date,                               -- Timestamp when data was ingested
+    cast(origin as varchar) as origin,                                             -- Source system
+    ingestion_date
 from {{ source('supplychain360', 'shipments') }}
 
 {% if is_incremental() %}
