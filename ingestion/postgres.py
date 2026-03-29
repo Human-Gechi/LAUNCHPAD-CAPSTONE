@@ -118,7 +118,7 @@ class Postgres:
             ingest_logger.error(f"❌ An unexpected error occurred: {e}")
             return []
 
-    def ingest_data(self, source, batch_size=10000, max_attempts=5, base_delay=1):
+    def ingest_data(self, source, batch_size=10000, max_attempts=5):
         """
         Ingests data from each table in the AWS RDS database in batches, concatenates the
         batches, and writes the complete DataFrame for each table to an S3 bucket in Parquet format.
@@ -149,19 +149,21 @@ class Postgres:
                         try:
                             query = f"SELECT * FROM {table} LIMIT {batch_size} OFFSET {offset}"
                             cur.execute(query)
+                            cols = [col[0] for col in cur.description]
+                            column_names = [col for col in cols]
                             rows = cur.fetchall()
                             if not rows:
                                 break
-                            df = pd.DataFrame(rows)
+                            df = pd.DataFrame(rows, columns=column_names)
                             batches.append(df)
                             offset += batch_size
                             break
                         except psycopg2.OperationalError as e:
                             ingest_logger.error(f"⚠️ Error on attempt {attempt} for {table}: {e}")
                             if attempt == max_attempts:
-                                ingest_logger.error(f"❌ Max attempts reached for {table} batch at offset {offset}. Skipping batch.")
+                                ingest_logger.error(f"❌ Max attempts reached for {table} batch at offset {offset}.  ⏩ Skipping batch.")
                                 break
-                            backoff = base_delay * (2 ** (attempt - 1))
+                            backoff =  (2 ** (attempt - 1))
                             ingest_logger.warning(f"⚠️ Retrying in {backoff}s.............")
                             time.sleep(backoff)
                             attempt += 1
@@ -177,7 +179,7 @@ class Postgres:
                 ingest_logger.warning(f"⚠️ Table {table} is empty.")
                 continue
             ingest_logger.info(f"Extracting {table}..... from db")
-            
+
             final_df = pd.concat(batches, ignore_index=True)
             file_existence = data_class.exists_by_basename(prefix, table)
             if not file_existence:
@@ -185,4 +187,3 @@ class Postgres:
                 ingest_logger.info(f"✅ Wrote {len(final_df)} rows from {table} to S3")
             else:
                 ingest_logger.info(f"⏩ Skipping {prefix}/{table} exists in s3")
-

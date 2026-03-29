@@ -34,7 +34,7 @@ def object_metadata(data_source: str, df: pd.DataFrame) -> pd.DataFrame:
         DataFrame
     """
     df = df.copy()
-    df["ingestion_date"] = time_stamp()
+    df[f"{data_source}_extraction_date"] = time_stamp()
     df["origin"] = data_source
     ingest_logger.info("✅ Metadata added successfully")
     return df
