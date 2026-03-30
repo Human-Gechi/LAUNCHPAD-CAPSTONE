@@ -1,3 +1,9 @@
+{{ config(
+    materialized='incremental',
+    unique_key = ['shipment_id','warehouse_id']
+    )
+}}
+
 WITH shipments AS (
     SELECT * FROM {{ ref('stg_shipments') }}
 ),
@@ -24,9 +30,14 @@ shipments_tracking AS (
             WHEN s.actual_delivery_date < s.expected_delivery_date THEN 'Early'
             WHEN s.actual_delivery_date > s.expected_delivery_date THEN 'Late'
             ELSE 'On time'
-        END AS delivery_status
+        END AS delivery_status,
+        s.ingestion_date
     FROM shipments AS s
     INNER JOIN products AS p ON p.product_id = s.product_id
     INNER JOIN stores AS st ON st.store_id = s.store_id
 )
-SELECT * FROM shipments_tracking
+SELECT * FROM shipments_tracking as track
+
+{% if is_incremental() %}
+WHERE track.ingestion_date > (SELECT MAX(ingestion_date) FROM {{ this }})
+{% endif %}

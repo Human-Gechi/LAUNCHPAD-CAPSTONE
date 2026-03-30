@@ -124,22 +124,22 @@ sources:
       - name: transactions
         description: "Logs inventory transactions sales daily."
         columns:
-          - name: "0"
-            description: "UUID (inferred): A mix of string and numbers, likely a unique transaction identifier."
-          - name: "1"
-            description: "(inferred) Unique identifier for stores"
-          - name: "2"
-            description: "(inferred) Unique identifier for products"
-          - name: "3"
+          - name: transaction_id
+            description: "UUID: A mix of string and numbers, likely a unique transaction identifier."
+          - name: store_id
+            description: "Unique identifier for stores"
+          - name: product_id
+            description: "Unique identifier for products"
+          - name: quantity_sold
             description: "(inferred) Quantity bought."
-          - name: "4"
-            description: "(inferred) Cost of each product"
-          - name: "5"
-            description: "(inferred) Discount of products cost"
-          - name: "6"
-            description: "(inferred) Total cost if discount is available"
-          - name: "7"
-            description: "(inferred) Epoch/Unix time stored in microseconds"
+          - name: unit_price
+            description: "Cost of each product"
+          - name: discount_pct
+            description: "Discount of products cost"
+          - name: sales_amount
+            description: "Total cost if discount is available"
+          - name: transaction_timestamp
+            description: "Epoch/Unix time stored in microseconds"
           - name: ingestion_date
             description: "Date it was ingested from source s3 bucket"
           - name: origin

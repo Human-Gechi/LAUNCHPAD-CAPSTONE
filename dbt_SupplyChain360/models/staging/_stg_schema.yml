@@ -6,25 +6,32 @@ models:
     columns:
       - name: warehouse_id
         description: "Unique warehouse identifier"
-        tests:
+        data_tests:
           - not_null
           - unique
+          - no_whitespace
       - name: city
         description: "City where warehouse is located in the US"
-        tests:
+        data_tests:
           - not_null
-          - unique
+          - no_whitespace
       - name: state
         description: "State where the warehouse is located in the US"
-        tests:
+        data_tests:
           - not_null
-      - name: ingestion_date
-        description: "Date the data was ingested from source s3 bucket to dest"
-        tests:
+          - no_whitespace
+      - name: s3_extraction_date
+        description: "Timestamp when data was ingested into s3"
+        data_tests:
           - not_null
       - name: origin
         description: "Data source"
-        tests:
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: ingestion_date
+        description: "Date the data was ingested from source s3 bucket to snowflake"
+        data_tests:
           - not_null
 
   - name: stg_suppliers
@@ -32,29 +39,37 @@ models:
     columns:
       - name: supplier_id
         description: "Unique supplier identifier"
-        tests:
+        data_tests:
           - not_null
           - unique
+          - no_whitespace
       - name: supplier_name
         description: "Name of supplier"
-        tests:
+        data_tests:
           - not_null
-          - unique
+          - no_whitespace
       - name: category
         description: "Category of products supplier deals in"
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: country
         description: "Country supplier is based in"
-        tests:
+        data_tests:
           - not_null
-      - name: ingestion_date
-        description: "Date the data was ingested from source s3 bucket to dest"
-        tests:
+          - no_whitespace
+      - name: s3_extraction_date
+        description: "Timestamp when data was ingested into s3"
+        data_tests:
           - not_null
       - name: origin
         description: "Data source"
-        tests:
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: ingestion_date
+        description: "Date the data was ingested from source s3 bucket to snowflake"
+        data_tests:
           - not_null
 
   - name: stg_products
@@ -62,41 +77,51 @@ models:
     columns:
       - name: product_id
         description: "Unique products Identifier"
-        tests:
+        data_tests:
           - not_null
           - unique
+          - no_whitespace
       - name: product_name
         description: "Name of products."
-        tests:
+        data_tests:
           - not_null
-          - unique
+          - no_whitespace
       - name: category
         description: "Product Categories"
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: brand
         description: "Product brand name"
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: supplier_id
         description: "Unique identifier for suppliers"
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
           - relationships:
               arguments:
-                field: supplier_id
                 to: source('supplychain360', 'suppliers')
+                field: supplier_id
       - name: unit_price
         description: "Cost of each product"
-        tests:
+        data_tests:
           - not_null
-      - name: ingestion_date
-        description: "Date the data was ingested from source s3 bucket to dest"
-        tests:
+          - positive_value
+      - name: s3_extraction_date
+        description: "Timestamp when data was ingested to s3"
+        data_tests:
           - not_null
       - name: origin
         description: "Data source"
-        tests:
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: ingestion_date
+        description: "Date the data was ingested from source s3 bucket to snowflake"
+        data_tests:
           - not_null
 
   - name: stg_stores
@@ -104,37 +129,46 @@ models:
     columns:
       - name: store_id
         description: "Unique stores Identifier"
-        tests:
+        data_tests:
           - not_null
           - unique
+          - no_whitespace
       - name: store_name
         description: "Names of stores"
-        tests:
+        data_tests:
           - not_null
-          - unique
+          - no_whitespace
       - name: city
         description: "City where stores are located."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: state
         description: "State in the US where the store is located"
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: region
         description: "Region in the US where the store is located; NORTH, SOUTH etc..."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: store_open_date
         description: "Dates the stores opened at their respective locations"
-        tests:
+        data_tests:
           - not_null
-      - name: ingestion_date
-        description: "Date the data was ingested from source s3 bucket to dest"
-        tests:
+      - name: sheets_extraction_date
+        description: "Timestamp when data was ingested to sheets"
+        data_tests:
           - not_null
       - name: origin
         description: "Data source"
-        tests:
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: ingestion_date
+        description: "Date the data was ingested from source s3 bucket to snowflake"
+        data_tests:
           - not_null
 
   - name: stg_shipments
@@ -142,60 +176,74 @@ models:
     columns:
       - name: shipment_id
         description: "Unique shipments Identifier."
-        tests:
+        data_tests:
           - not_null
           - unique
+          - no_whitespace
       - name: warehouse_id
         description: "Unique warehouse Identifier"
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
           - relationships:
               arguments:
-                field: warehouse_id
                 to: source('supplychain360', 'warehouses')
+                field: warehouse_id
       - name: store_id
         description: "Unique stores Identifier"
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
           - relationships:
               arguments:
-                field: store_id
                 to: source('supplychain360', 'stores')
+                field: store_id
       - name: product_id
         description: "Unique products Identifier"
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
           - relationships:
               arguments:
-                field: product_id
                 to: source('supplychain360', 'products')
+                field: product_id
       - name: quantity_shipped
         description: "Number of products shipped"
-        tests:
+        data_tests:
           - not_null
+          - positive_value
       - name: shipment_date
         description: "Timestamp of Shipments"
-        tests:
+        data_tests:
           - not_null
+          - is_date_type
       - name: expected_delivery_date
         description: "Timestamp of expected delivery date"
-        tests:
+        data_tests:
           - not_null
+          - is_date_type
       - name: actual_delivery_date
         description: "Timestamp of actual delivery date"
-        tests:
+        data_tests:
           - not_null
+          - is_date_type
       - name: carrier
         description: "Shipment company"
-        tests:
+        data_tests:
           - not_null
-      - name: ingestion_date
-        description: "Date the data was ingested from source s3 bucket to dest"
-        tests:
+          - no_whitespace
+      - name: s3_extraction_date
+        description: "Timestamp when data was ingested to s3"
+        data_tests:
           - not_null
       - name: origin
         description: "Data source"
-        tests:
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: ingestion_date
+        description: "Date the data was ingested from source s3 bucket to snowflake"
+        data_tests:
           - not_null
 
   - name: stg_inventory
@@ -203,90 +251,112 @@ models:
     columns:
       - name: warehouse_id
         description: "Unique warehouse Identifier"
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
           - relationships:
               arguments:
-                field: warehouse_id
                 to: source('supplychain360', 'warehouses')
+                field: warehouse_id
       - name: product_id
         description: "Unique products Identifier"
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
           - relationships:
               arguments:
-                field: product_id
                 to: source('supplychain360', 'products')
+                field: product_id
+
       - name: quantity_available
         description: "Number of products available"
-        tests:
+        data_tests:
           - not_null
+          - positive_value
       - name: reorder_threshold
         description: "The minimum inventory level at which a new order should be placed to replenish stock."
-        tests:
+        data_tests:
           - not_null
       - name: snapshot_date
         description: "The timestamp indicating when this record was captured in the snapshot."
-        tests:
+        data_tests:
           - not_null
-      - name: ingestion_date
-        description: "Date the data was ingested from source s3 bucket to dest"
-        tests:
+          - is_date_type
+      - name: s3_extraction_date
+        description: "Timestamp when data was ingested to s3"
+        data_tests:
           - not_null
       - name: origin
         description: "Data source"
-        tests:
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: ingestion_date
+        description: "Date the data was ingested from source s3 bucket to snowflake"
+        data_tests:
           - not_null
 
   - name: stg_transactions
     description: "Logs inventory transactions sales daily."
     columns:
       - name: transaction_id
-        description: "UUID (inferred): A mix of string and numbers, likely a unique transaction identifier."
-        tests:
+        description: "UUID A mix of string and numbers, likely a unique transaction identifier."
+        data_tests:
           - not_null
           - unique
+          - no_whitespace
       - name: store_id
-        description: "(inferred) Unique identifier for stores"
-        tests:
+        description: "Unique identifier for stores"
+        data_tests:
           - not_null
+          - no_whitespace
           - relationships:
               arguments:
-                field: store_id
                 to: source('supplychain360', 'stores')
+                field: store_id
       - name: product_id
         description: "(inferred) Unique identifier for products"
-        tests:
+        data_tests:
           - not_null
           - relationships:
               arguments:
-                field: product_id
                 to: source('supplychain360', 'products')
-      - name: quantity
-        description: "(inferred) Quantity bought."
-        tests:
+                field: product_id
+          - no_whitespace:
+              column_name: product_id
+      - name: quantity_sold
+        description: "Quantity sold."
+        data_tests:
           - not_null
       - name: unit_price
-        description: "(inferred) Cost of each product"
-        tests:
+        description: "Cost of each product"
+        data_tests:
           - not_null
-      - name: discount
-        description: "(inferred) Discount of products cost"
-        tests:
+          - positive_value
+      - name: discount_pct
+        description: "Discount of products cost"
+        data_tests:
           - not_null
-      - name: total_cost
-        description: "(inferred) Total cost if discount is available"
-        tests:
+          - positive_value
+      - name: net_revenue
+        description: "Total cost if discount is available"
+        data_tests:
           - not_null
+          - positive_value
       - name: transaction_timestamp_utc
-        description: "(inferred) Epoch/Unix time stored in microseconds"
-        tests:
+        description: "Time of transaction"
+        data_tests:
           - not_null
-      - name: ingestion_date
-        description: "Date the data was ingested from source s3 bucket to dest"
-        tests:
+      - name: rds_extraction_date
+        description: "Timestamp when data was ingested from rds"
+        data_tests:
           - not_null
       - name: origin
         description: "Data source"
-        tests:
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: ingestion_date
+        description: "Date the data was ingested from source s3 bucket to snowflake"
+        data_tests:
           - not_null

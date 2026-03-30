@@ -1,3 +1,9 @@
+{{ config(
+    materialized='incremental',
+    unique_key = ['warehouse_id','store_id','shipment_id']
+    )
+}}
+
 WITH shipments AS (
     SELECT * FROM {{ ref('stg_shipments') }}
 ),
@@ -23,7 +29,8 @@ base_locations AS (
             WHEN st.city = w.city THEN 'Local (Same City)'
             WHEN st.state = w.state THEN 'Regional (Same State)'
             ELSE 'Long-Haul (Inter-State)'
-        END AS shipping_distance
+        END AS shipping_distance,
+        s.ingestion_date
     FROM shipments AS s
     INNER JOIN stores AS st ON st.store_id = s.store_id
     INNER JOIN  warehouses AS  w ON w.warehouse_id = s.warehouse_id
@@ -36,4 +43,8 @@ SELECT
         WHEN shipping_distance = 'Local (Same City)' AND transit_days > 1 THEN 'Warehouse Delay'
         ELSE 'Good Route'
     END AS route_performance_status
-FROM base_locations
+FROM base_locations AS base
+
+{% if is_incremental() %}
+    WHERE base.ingestion_date > (SELECT MAX(ingestion_date) FROM {{ this }})
+{% endif %}

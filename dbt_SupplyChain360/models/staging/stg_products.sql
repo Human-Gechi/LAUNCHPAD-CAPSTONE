@@ -1,11 +1,11 @@
-select distinct
-    coalesce(cast(product_id as varchar), 'PROD-XXXX') as product_id,            -- Unique products Identifier
-    coalesce(cast(product_name as varchar), 'UNKNOWN') as product_name,          -- Name of products.
-    coalesce(cast(category as varchar), 'UNKNOWN') as category,                  -- Product Categories
-    coalesce(cast(brand as varchar), 'UNKNOWN') as brand,                        -- Product brand name
-    coalesce(cast(supplier_id as varchar), 'UNKNOWN') as supplier_id,            -- Unique identifier for suppliers
-    coalesce(abs(cast(unit_price as decimal(10,2))), 0.00) as unit_price,        -- Cost of each product (decimal)
-    cast(sheets_extraction_date as timestamp_ntz) as ingestion_date,                               -- Timestamp when data was ingested
-    cast(origin as varchar) as origin,                                             -- Source system
+SELECT DISTINCT
+    {{ clean_id('product_id', "'PROD-XXXX'") }} as product_id,
+    {{ clean_string('product_name') }} as product_name,
+    {{ clean_string('category') }} as category,
+    {{ clean_string('brand') }} as brand,
+    {{ clean_id('supplier_id', "'SUP-XXX'") }} as supplier_id,
+    {{ clean_decimal('unit_price', 0.00) }} as unit_price,
+    cast(s3_extraction_date as timestamp_ntz) as s3_extraction_date,
+    trim(cast(origin as varchar)) as origin,
     ingestion_date
-from {{ source('supplychain360', 'products') }}
+FROM {{ source('supplychain360', 'products') }}

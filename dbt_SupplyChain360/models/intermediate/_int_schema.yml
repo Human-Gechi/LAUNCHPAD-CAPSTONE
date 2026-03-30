@@ -3,230 +3,271 @@ version: 2
 models:
   - name: int_warehouse_to_store_efficiency
     description: >
-      This model analyzes the efficiency of shipments from warehouses to stores, 
-      capturing key metrics such as transit time, shipping distance, and route performance. 
+      This model analyzes the efficiency of shipments from warehouses to stores.
       It helps identify bottlenecks and optimize logistics operations between warehouses and stores.
     columns:
       - name: warehouse_id
-        description: "Unique identifier for each warehouse."
-        tests:
+        description: "Unique identifier for the warehouse."
+        data_tests:
           - not_null
+          - no_whitespace
       - name: store_id
-        description: "Unique identifier for each store."
-        tests:
+        description: "Unique identifier for the store."
+        data_tests:
           - not_null
+          - no_whitespace
       - name: store_city
         description: "City where the store is located."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: store_state
         description: "State where the store is located."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: warehouse_city
         description: "City where the warehouse is located."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: warehouse_state
         description: "State where the warehouse is located."
-        tests:
+        data_tests:
           - not_null
-      - name: transit_days
-        description: "Number of days taken for a shipment to reach the store from the warehouse."
-        tests:
-          - not_null
-          - unique
+          - no_whitespace
       - name: shipping_distance
         description: "Categorized distance between warehouse and store locations."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
           - accepted_values:
-              values: ['Local (Same City)', 'Regional (Same State)', 'Long-Haul (Inter-State)']
-      - name: route_performane_status
+              arguments:
+                values: ['Local (Same City)', 'Regional (Same State)', 'Long-Haul (Inter-State)']
+      - name: route_performance_status
         description: "Assessment of the route's performance, indicating delay risks or efficiency."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
           - accepted_values:
-              values: ['High Delay Risk', 'Warehouse Delay', 'Good Route']
-
-  - name: int_ghost_products
-    description: >
-      This model identifies 'ghost products'—items that have not had any purchases since the last recorded transaction. 
-      It highlights products with aging inventory, quantifies the days since last sale, and estimates the capital at risk, 
-      supporting efforts to clean up inventory and improve stock accuracy.
-    columns:
-      - name: product_id
-        description: "Unique identifier for each product."
-        tests:
-          - not_null
-      - name: days_since_last_sale
-        description: "Number of days since the product's last recorded transaction."
-        tests:
-          - not_null
-      - name: quantity_available
-        description: "Current available inventory quantity for the product."
-        tests:
-          - not_null
-      - name: capital_at_risk
-        description: "Estimated value of unsold inventory for the product, calculated as quantity available multiplied by unit price."
-        tests:
-          - not_null
+              arguments:
+                values: ['High Delay Risk', 'Warehouse Delay', 'Good Route']
 
   - name: int_transactions_enriched
-    description: >
-      This model enriches transaction data with product details and financial calculations, including gross revenue, expenses, discounts, profit/loss, and profit margin. It provides a comprehensive view of each transaction's financial performance.
+    description: This model enriches transaction data with product details and financial calculations.
     columns:
       - name: transaction_id
         description: "Unique identifier for each transaction."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: store_id
         description: "Unique identifier for the store where the transaction occurred."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: product_id
         description: "Unique identifier for the product sold."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: product_name
         description: "Name of the product."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: category
         description: "Product category."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: brand
         description: "Brand of the product."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: supplier_id
         description: "Unique identifier for the product's supplier."
-        tests:
+        data_tests:
           - not_null
-      - name: quantity
+          - no_whitespace
+      - name: quantity_sold
         description: "Number of units sold in the transaction."
-        tests:
+        data_tests:
           - not_null
+          - positive_value
       - name: selling_unit_price
-        description: "Unit price at which the product was sold."
-        tests:
+        data_tests:
           - not_null
+          - positive_value
       - name: supplier_unit_price
-        description: "Unit price at which the product was supplied."
-        tests:
+        data_tests:
           - not_null
-      - name: discount
-        description: "Discount applied to the transaction."
-        tests:
+          - positive_value
+      - name: discount_pct
+        data_tests:
           - not_null
+          - positive_value
       - name: net_revenue
-        description: "Net revenue after discounts."
-        tests:
+        data_tests:
           - not_null
+          - positive_value
       - name: gross_revenue
-        description: "Total revenue before discounts (quantity * selling unit price)."
-        tests:
+        data_tests:
           - not_null
+          - positive_value
       - name: total_expenses
-        description: "Total cost of goods sold (quantity * supplier unit price)."
-        tests:
+        data_tests:
           - not_null
+          - positive_value
       - name: discount_amount
-        description: "Total discount amount applied to the transaction."
-        tests:
+        data_tests:
           - not_null
+          - positive_value
       - name: net_profit_loss
-        description: "Net profit or loss for the transaction (net revenue - total expenses)."
-        tests:
+        data_tests:
           - not_null
       - name: profit_margin_pct
-        description: "Profit margin percentage for the transaction."
-        tests:
+        data_tests:
           - not_null
       - name: financial_status
-        description: "Financial outcome of the transaction: Loss, Breakeven, Profit (Discounted), or Full Profit."
-        tests:
+        description: "Financial outcome of the transaction."
+        data_tests:
           - not_null
+          - no_whitespace
 
   - name: int_inventory_health
-    description: >
-      This model evaluates the health of inventory for each product at each warehouse, indicating stock-outs, low stock, healthy, and sufficient inventory levels based on quantity available and reorder thresholds.
+    description: This model evaluates the health of inventory for each product at each warehouse.
     columns:
       - name: warehouse_id
-        description: "Unique identifier for each warehouse."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: product_id
-        description: "Unique identifier for each product."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: product_name
-        description: "Name of the product."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: quantity_available
-        description: "Current available inventory quantity for the product at the warehouse."
-        tests:
+        data_tests:
           - not_null
+          - positive_value
       - name: reorder_threshold
-        description: "Minimum quantity before a reorder is triggered for the product at the warehouse."
-        tests:
+        data_tests:
           - not_null
+          - positive_value
       - name: stock_to_threshold_ratio
-        description: "Ratio of available quantity to reorder threshold."
-        tests:
+        data_tests:
           - not_null
-      - name: STOCK_STATUS
-        description: "Inventory status: Stock-Out, Below Reorder Threshold, Healthy, or Sufficient."
-        tests:
+          - positive_value
+      - name: stock_status
+        description: "Inventory status."
+        data_tests:
           - not_null
+          - no_whitespace
+          - accepted_values:
+              arguments:
+                values: ['Stock-Out', 'Below Reorder Threshold', 'Healthy', 'Sufficient']
 
   - name: int_shipments_performance
-    description: >
-      This model tracks and analyzes the performance of shipments, including delivery times, delays, and fulfillment rates, to provide insights into supply chain efficiency.
+    description: This model tracks and analyzes the performance of shipments.
     columns:
       - name: shipment_id
-        description: "Unique identifier for each shipment."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: warehouse_id
-        description: "Unique identifier for the warehouse from which the shipment originated."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: quantity_shipped
-        description: "Number of units shipped in the shipment."
-        tests:
+        data_tests:
           - not_null
+          - positive_value
       - name: carrier
-        description: "Name of the carrier responsible for the shipment."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: product_name
-        description: "Name of the product shipped."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: category
-        description: "Category of the product shipped."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: store_name
-        description: "Name of the destination store."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: region
-        description: "Region where the store is located."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: city
-        description: "City where the store is located."
-        tests:
+        data_tests:
           - not_null
+          - no_whitespace
       - name: delivery_delay_days
-        description: "Number of days the delivery was early or late compared to the expected delivery date."
-        tests:
+        data_tests:
           - not_null
       - name: delivery_status
-        description: "Status of the delivery: Early, On time, or Late."
-        tests:
+        description: "Status of the delivery."
+        data_tests:
           - not_null
+          - no_whitespace
+          - accepted_values:
+              arguments:
+                values: ['Early', 'On time', 'Late']
+
+  - name: int_supplier_products
+    description: "Intermediate model mapping suppliers to their products, including supplier and product details."
+    columns:
+      - name: supplier_id
+        description: "Unique identifier for the supplier."
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: supplier_name
+        description: "Name of the supplier."
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: supplier_category
+        description: "Category of products supplied by the supplier."
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: country
+        description: "Country where the supplier is based."
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: product_id
+        description: "Unique identifier for the product."
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: product_name
+        description: "Name of the product."
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: brand
+        description: "Brand of the product."
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: product_category
+        description: "Category of the product."
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: unit_price
+        description: "Unit price of the product."
+        data_tests:
+          - not_null
+          - no_whitespace

@@ -15,14 +15,15 @@ product_calculations AS (
         p.category,
         p.brand,
         p.supplier_id,
-        t.quantity,
+        t.quantity_sold,
         t.unit_price AS selling_unit_price,
         p.unit_price AS supplier_unit_price,
-        t.discount,
+        t.discount_pct,
         t.net_revenue,
-        cast((t.quantity * t.unit_price) as decimal(10,2)) AS gross_revenue,           
-        cast((t.quantity * p.unit_price) as decimal(10,2)) AS total_expenses,
-        cast(((t.quantity * t.unit_price) - t.net_revenue) as decimal(10,2)) AS discount_amount
+        cast((t.quantity_sold * t.unit_price) as decimal(10,2)) AS gross_revenue,
+        cast((t.quantity_sold * p.unit_price) as decimal(10,2)) AS total_expenses,
+        cast(((t.quantity_sold * t.unit_price) - t.net_revenue) as decimal(10,2)) AS discount_amount,
+        t.ingestion_date
     FROM transactions t
     LEFT JOIN products p ON t.product_id = p.product_id
 )
@@ -41,7 +42,7 @@ SELECT
         WHEN pc.net_revenue < pc.total_expenses THEN 'Loss'
         WHEN pc.net_revenue = pc.total_expenses THEN 'Breakeven'
         WHEN pc.net_revenue > pc.total_expenses AND pc.net_revenue < pc.gross_revenue THEN 'Profit (Discounted)'
-        ELSE 'Full Profit'
+        ELSE 'Full Profit (No Discount)'
     END AS financial_status
 
 FROM product_calculations AS pc

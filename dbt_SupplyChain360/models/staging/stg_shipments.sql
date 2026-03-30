@@ -3,21 +3,21 @@
     unique_key = 'shipment_id'
     )
 }}
-select distinct
-    coalesce(cast(shipment_id as varchar), 'UNKNOWN') as shipment_id,             -- Unique identifier for each shipment
-    coalesce(cast(warehouse_id as varchar), 'WH-XXX') as warehouse_id,            -- Warehouse from which shipment originated
-    coalesce(cast(store_id as varchar), 'STORE-XXXX') as store_id,                -- Store receiving the shipment
-    coalesce(cast(product_id as varchar), 'PROD-XXXX') as product_id,             -- Product being shipped
-    coalesce(abs(cast(quantity_shipped as number)), 0) as quantity_shipped,            -- Number of units shipped
-    coalesce(cast(shipment_date as date), current_date) as shipment_date,         -- Date shipment was sent
-    coalesce(cast(expected_delivery_date as date), current_date) as expected_delivery_date, -- Expected delivery date
-    coalesce(cast(actual_delivery_date as date), current_date) as actual_delivery_date,     -- Actual delivery date
-    coalesce(cast(carrier as varchar), 'UNKNOWN') as carrier,                     -- Shipping carrier
-    cast(s3_extraction_date as timestamp_ntz) as ingestion_date,                               -- Timestamp when data was ingested
-    cast(origin as varchar) as origin,                                             -- Source system
+SELECT DISTINCT
+    {{ clean_id('shipment_id', "'UNKNOWN'") }} as shipment_id,
+    {{ clean_id('warehouse_id', "'WH-XXX'") }} as warehouse_id,
+    {{ clean_id('store_id', "'STORE-XXXX'") }} as store_id,
+    {{ clean_id('product_id', "'PROD-XXXX'") }} as product_id,
+    {{ clean_number('quantity_shipped') }} as quantity_shipped,
+    coalesce(cast(shipment_date as date), current_date) as shipment_date,
+    coalesce(cast(expected_delivery_date as date), current_date) as expected_delivery_date,
+    coalesce(cast(actual_delivery_date as date), current_date) as actual_delivery_date,
+    {{ clean_string('carrier') }} as carrier,
+    cast(s3_extraction_date as timestamp_ntz) as s3_extraction_date,
+    trim(cast(origin as varchar)) as origin,
     ingestion_date
-from {{ source('supplychain360', 'shipments') }}
+FROM {{ source('supplychain360', 'shipments') }}
 
 {% if is_incremental() %}
-    WHERE ingestion_date >= (SELECT MAX(ingestion_date) FROM {{ this }})
+    WHERE ingestion_date > (SELECT MAX(ingestion_date) FROM {{ this }})
 {% endif %}
