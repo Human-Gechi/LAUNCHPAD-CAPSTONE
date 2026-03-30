@@ -1,0 +1,31 @@
+name: SupplyChain360
+
+on: [push, pull_request]
+    schedule:
+        - cron: '* * 0 * * '
+jobs:
+    code-linting-formatting:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/set-up-python@v4
+              with:
+                python-version: '3.11.15'
+
+            - name: Install Project dependencies
+              run: pip install -r requirements.txt
+
+            - name: Run ruff
+              run: ruff check .
+
+            - name: Run rff formatting check
+              run: ruff format --check .
+
+            
+
+
+
+
