@@ -1,8 +1,11 @@
 name: SupplyChain360
 
-on: [push, pull_request]
-    schedule:
-        - cron: '* * 0 * * '
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '* * 0 * *'
+
 jobs:
     code-linting-formatting:
         runs-on: ubuntu-latest
@@ -24,7 +27,7 @@ jobs:
             - name: Run rff formatting check
               run: ruff format --check .
 
-            
+
 
 
 
