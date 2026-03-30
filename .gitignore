@@ -14,3 +14,4 @@ streamlit_log.log
 *.log
 *.env
 crested-pursuit-457714-c8-f5a68d29f980.json
+.pytest_cache
