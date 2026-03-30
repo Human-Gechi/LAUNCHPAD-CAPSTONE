@@ -1,6 +1,7 @@
 # Built-in
 from datetime import datetime
 
+
 def time_stamp() -> datetime:
     """
     Full timestamp for file metadata
@@ -9,6 +10,7 @@ def time_stamp() -> datetime:
         timestamp
     """
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
 
 def full_timestamp() -> datetime:
     """
@@ -35,4 +37,3 @@ def parquet_path(folder: str, filename: str) -> str:
     ts = full_timestamp()
     path = f"{folder}/{filename}_{ts}.parquet"
     return path
-

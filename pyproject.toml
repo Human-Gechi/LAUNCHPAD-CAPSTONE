@@ -35,7 +35,7 @@ include = ["ingestion*", "infrastructure*"]
 exclude = ["awscliv2"]
 
 [tool.ruff]
-line-length = 120
+line-length = 100
 target-version = "py311"
 
 exclude = [

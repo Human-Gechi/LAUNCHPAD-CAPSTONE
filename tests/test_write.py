@@ -1,9 +1,11 @@
 import os
-import pandas as pd
-from ingestion.write import object_metadata, get_dest_s3_client, write_parquet
-from moto import mock_aws
+
 import boto3
+import pandas as pd
 import pytest
+from moto import mock_aws
+
+from ingestion.write import get_dest_s3_client, object_metadata, write_parquet
 
 
 @pytest.fixture(autouse=True)
@@ -15,7 +17,7 @@ def set_test_env(monkeypatch):
 
 def test_object_metadata():
     data_source = "test"
-    df = pd.DataFrame({'quantity': [1, 2]})
+    df = pd.DataFrame({"quantity": [1, 2]})
 
     result = object_metadata(data_source, df)
 
@@ -38,13 +40,13 @@ def test_write_parquet():
     s3 = boto3.client("s3", region_name=os.getenv("DST_REGION"))
     s3.create_bucket(
         Bucket=os.getenv("DST_BUCKET"),
-        CreateBucketConfiguration={'LocationConstraint': os.getenv('DST_REGION')}
+        CreateBucketConfiguration={"LocationConstraint": os.getenv("DST_REGION")},
     )
 
-    df = pd.DataFrame({'quantity': [1, 2], 'price': [3, 4]})
-    folder="raw/inventory"
-    filename="inventory_2050_03_01"
-    data_source="test"
+    df = pd.DataFrame({"quantity": [1, 2], "price": [3, 4]})
+    folder = "raw/inventory"
+    filename = "inventory_2050_03_01"
+    data_source = "test"
 
     write_parquet(df, data_source, folder, filename)
 

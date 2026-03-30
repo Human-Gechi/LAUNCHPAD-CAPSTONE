@@ -8,12 +8,13 @@ import botocore.exceptions
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
-from ingestion.config import get_config
 
+from ingestion.config import get_config
 from ingestion.utility import parquet_path, time_stamp
 
 # Local modules
 from log import ingest_logger
+
 
 def object_metadata(data_source: str, df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -43,7 +44,9 @@ def get_dest_s3_client():
     try:
         # Session creation
         config = get_config()
-        session = boto3.Session(profile_name=config["DST_PROFILE"], region_name=config["DST_REGION"])
+        session = boto3.Session(
+            profile_name=config["DST_PROFILE"], region_name=config["DST_REGION"]
+        )
         ingest_logger.info("✅ Session created successfully")
         return session.client("s3")
     except botocore.exceptions.ProfileNotFound:
@@ -96,5 +99,6 @@ def write_parquet(df: pd.DataFrame, data_source: str, folder: str, filename: str
         ingest_logger.error(f"❌An error occured {e}")
     except botocore.exceptions.EndpointConnectionError:
         ingest_logger.error("❌Check your network and try again later")
+
 
 get_dest_s3_client()

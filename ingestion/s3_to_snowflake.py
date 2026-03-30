@@ -1,32 +1,32 @@
-import snowflake.connector
-import os
-import pandas as pd
-import pandas as pd
 import io
+import os
 import time
 
-from ingestion.s3_to_s3 import S3ClientFactory
+import pandas as pd
+import snowflake.connector
 from snowflake.connector.pandas_tools import write_pandas
 
+from ingestion.s3_to_s3 import S3ClientFactory
 from log import ingest_logger
 
 dst_client = S3ClientFactory.create_client("DST")
-base = 'raw/'
+base = "raw/"
 
 pq_to_sf_type = {
-    'Int64': 'NUMBER',
-    'int64': 'NUMBER',
-    'Float64': 'FLOAT',
-    'float64': 'FLOAT',
-    'str': 'VARCHAR',
-    'object': 'VARCHAR',
-    'bool': 'BOOLEAN',
-    'datetime64[us]': 'VARCHAR',
-    'datetime64[ns]': 'VARCHAR'
+    "Int64": "NUMBER",
+    "int64": "NUMBER",
+    "Float64": "FLOAT",
+    "float64": "FLOAT",
+    "str": "VARCHAR",
+    "object": "VARCHAR",
+    "bool": "BOOLEAN",
+    "datetime64[us]": "VARCHAR",
+    "datetime64[ns]": "VARCHAR",
 }
 
+
 class SnowFlake:
-    def __init__(self,dst_client, dst_bucket):
+    def __init__(self, dst_client, dst_bucket):
         self.user = os.getenv("SF_USER")
         self.password = os.getenv("SF_PASSWORD")
         self.account = os.getenv("SF_ACCOUNT")
@@ -52,7 +52,7 @@ class SnowFlake:
             warehouse=self.warehouse,
             database=self.database,
             schema=self.schema,
-            role = self.role
+            role=self.role,
         )
         ingest_logger.info("✅ Connection to Snowflake obtained")
         return conn
@@ -73,13 +73,14 @@ class SnowFlake:
         Returns:
             The count of values in the tables
         """
-        cur.execute(f"""
+        cur.execute(
+            f"""
             SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES
             WHERE TABLE_SCHEMA = '{self.schema}'
             AND TABLE_NAME = '{table_name}'
-        """)
+        """
+        )
         return cur.fetchone()[0] > 0
-
 
     def get_directories(self):
         """
@@ -88,41 +89,37 @@ class SnowFlake:
         For instance:
             directories = raw/inventory, raw/products ........
             base_directory = raw (base)
-        
+
         Returns:
-            directories: Strings splitted at / 
+            directories: Strings splitted at /
             directories : inventory, products
         """
         files = self.dst_client.list_objects_v2(Bucket=self.dst_bucket, Prefix=base)
         directories = set()
-        for obj in files.get('Contents', []):
+        for obj in files.get("Contents", []):
             key = obj["Key"]
-            parts = key.split('/')
+            parts = key.split("/")
             if len(parts) > 1 and parts[1]:
                 directories.add(parts[1])
         return directories
 
     def get_parquet_files_in_dir(self, directory):
         files = self.dst_client.list_objects_v2(
-            Bucket=self.dst_bucket,
-            Prefix=f'{base}{directory}/'
+            Bucket=self.dst_bucket, Prefix=f"{base}{directory}/"
         )
         parquet_files = []
-        for obj in files.get('Contents', []):
+        for obj in files.get("Contents", []):
             key = obj["Key"]
-            if key.endswith('.parquet'):
+            if key.endswith(".parquet"):
                 etag = obj["ETag"].strip('"')
                 last_modified = obj["LastModified"]
-                parquet_files.append({
-                    'key': key,
-                    'etag': etag,
-                    'last_modified': last_modified
-                })
+                parquet_files.append({"key": key, "etag": etag, "last_modified": last_modified})
         return parquet_files
 
     def create_processed_files_table(self, conn):
         with conn.cursor() as cur:
-            cur.execute("""
+            cur.execute(
+                """
                 CREATE TABLE IF NOT EXISTS PROCESSED_FILES (
                     FILE_KEY VARCHAR(1024),
                     ETAG VARCHAR(64),
@@ -130,19 +127,28 @@ class SnowFlake:
                     PROCESSED_AT TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP(),
                     PRIMARY KEY (FILE_KEY, ETAG)
                 );
-            """)
+            """
+            )
 
     def is_file_processed(self, cur, file_key, etag):
-        cur.execute("SELECT 1 FROM PROCESSED_FILES WHERE FILE_KEY = %s AND ETAG = %s", (file_key, etag,))
+        cur.execute(
+            "SELECT 1 FROM PROCESSED_FILES WHERE FILE_KEY = %s AND ETAG = %s",
+            (
+                file_key,
+                etag,
+            ),
+        )
         return cur.fetchone() is not None
 
     def mark_file_processed(self, cur, file_key, etag, lastmodified):
-        cur.execute("INSERT INTO PROCESSED_FILES (FILE_KEY, ETAG, LAST_MODIFIED) VALUES (%s, %s, %s)",
-                    (file_key, etag, lastmodified))
+        cur.execute(
+            "INSERT INTO PROCESSED_FILES (FILE_KEY, ETAG, LAST_MODIFIED) VALUES (%s, %s, %s)",
+            (file_key, etag, lastmodified),
+        )
 
     def get_df(self, key):
         obj = self.dst_client.get_object(Bucket=self.dst_bucket, Key=key)
-        data = obj['Body'].read()
+        data = obj["Body"].read()
         df = pd.read_parquet(io.BytesIO(data))
         df.columns = [c.upper() for c in df.columns]
         return df
@@ -151,7 +157,7 @@ class SnowFlake:
         columns = []
         for col, dtype in zip(df.columns, df.dtypes):
             sf_type = self.parquet_dtypes_to_snowflake(dtype.name)
-            columns.append(f'{col} {sf_type}')
+            columns.append(f"{col} {sf_type}")
         return ", ".join(columns)
 
     def create_table(self, cur, table, columns_sql):
@@ -191,11 +197,10 @@ class SnowFlake:
                 0
             ingest_logger.info(f"📌 Upserted {count} rows into {table} from file {key}")
 
-
     def process_file(self, conn, cur, file_info, table, staging_table, batch_size, max_retries):
-        key = file_info['key']
-        etag = file_info['etag']
-        last_modified = file_info['last_modified']
+        key = file_info["key"]
+        etag = file_info["etag"]
+        last_modified = file_info["last_modified"]
 
         if self.is_file_processed(cur, key, etag):
             ingest_logger.info(f"File {key} (ETag: {etag}) already processed, ⏩ skipping.....")
@@ -206,7 +211,7 @@ class SnowFlake:
         while file_attempt < max_retries:
             try:
                 obj = self.dst_client.get_object(Bucket=self.dst_bucket, Key=key)
-                data = obj['Body'].read()
+                data = obj["Body"].read()
                 df = pd.read_parquet(io.BytesIO(data))
                 df = df.drop_duplicates()
                 df.columns = [c.upper() for c in df.columns]
@@ -217,14 +222,17 @@ class SnowFlake:
                 break
             except Exception as e:
                 file_attempt += 1
-                wait= (2 ** (file_attempt - 1))
-                ingest_logger.error(f"Error processing file {key} (attempt {file_attempt}/{max_retries}): {e}")
+                wait = 2 ** (file_attempt - 1)
+                ingest_logger.error(
+                    f"Error processing file {key} (attempt {file_attempt}/{max_retries}): {e}"
+                )
                 if file_attempt < max_retries:
                     ingest_logger.info(f"Retrying in {wait} seconds...")
                     time.sleep(wait)
                 else:
-                    ingest_logger.error(f"Failed to process file {key} after {max_retries} attempts. Skipping.")
-
+                    ingest_logger.error(
+                        f"Failed to process file {key} after {max_retries} attempts. Skipping."
+                    )
 
     def process_directory(self, conn, cur, directory, batch_size, max_retries):
         table = directory.upper()
@@ -234,7 +242,7 @@ class SnowFlake:
             ingest_logger.info(f"No parquet files found in {directory}, ⏩ Skipping.....")
             return
 
-        df= self.get_df(parquet_files[0]['key'])
+        df = self.get_df(parquet_files[0]["key"])
         columns_sql = self.get_columns_sql(df)
         self.create_table(cur, table, columns_sql)
         staging_table = self.create_staging_table(cur, table, columns_sql)
@@ -244,7 +252,6 @@ class SnowFlake:
 
         cur.execute(f"DROP TABLE IF EXISTS {staging_table}")
         ingest_logger.info(f"✅ Staging table {staging_table} dropped")
-
 
     def create_tables_from_directories(self):
         max_retries = 5
@@ -261,12 +268,16 @@ class SnowFlake:
                             self.process_directory(conn, cur, directory, batch_size, max_retries)
                     break
             except Exception as e:
-                ingest_logger.error(f"Error in main pipeline (attempt {attempt}/{max_retries}): {e}")
+                ingest_logger.error(
+                    f"Error in main pipeline (attempt {attempt}/{max_retries}): {e}"
+                )
                 if attempt < max_retries:
                     wait = 2 ** (attempt - 1)
                     ingest_logger.info(f"Retrying main pipeline in {wait} seconds...")
                     time.sleep(wait)
                     attempt += 1
                 else:
-                    ingest_logger.error(f"Failed to complete pipeline after {max_retries} attempts.")
+                    ingest_logger.error(
+                        f"Failed to complete pipeline after {max_retries} attempts."
+                    )
                     break

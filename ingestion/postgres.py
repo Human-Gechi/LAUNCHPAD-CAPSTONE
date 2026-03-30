@@ -1,15 +1,18 @@
-import pandas as pd
 import os
-from dotenv import load_dotenv
-import psycopg2
-from ingestion.write import write_parquet
-from ingestion.s3_to_s3 import MoveData, S3ClientFactory
-from log import ingest_logger
 import time
+
+import pandas as pd
+import psycopg2
+from dotenv import load_dotenv
+
+from ingestion.s3_to_s3 import MoveData
+from ingestion.write import write_parquet
+from log import ingest_logger
+
 load_dotenv()
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-sql_path = os.path.join(script_dir, 'tables.sql')
+sql_path = os.path.join(script_dir, "tables.sql")
 
 
 class Postgres:
@@ -25,10 +28,11 @@ class Postgres:
             Makes a connection to AWS Relational Database Service
         get_table_names:
             Retrieves names of tables in AWS RDS
-        ingest_data: 
+        ingest_data:
             Ingests data from RDS to s3 destination bucket
     """
-    def __init__(self,dst_client, dst_bucket):
+
+    def __init__(self, dst_client, dst_bucket):
         self.host = os.getenv("DB_HOST")
         self.port = os.getenv("DB_PORT")
         self.user = os.getenv("DB_USER")
@@ -36,7 +40,7 @@ class Postgres:
         self.password = os.getenv("DB_PASSWORD")
         self.dst_client = dst_client
         self.dst_bucket = dst_bucket
-        self.data_source = 'rds'
+        self.data_source = "rds"
 
     def connect_rds(self):
         """
@@ -55,8 +59,8 @@ class Postgres:
                     user=self.user,
                     password=self.password,
                     dbname=self.db,
-                    sslmode='require',
-                    connect_timeout=30
+                    sslmode="require",
+                    connect_timeout=30,
                 )
                 try:
                     with conn.cursor() as cur:
@@ -74,7 +78,6 @@ class Postgres:
         ingest_logger.error("❌ Could not establish a valid connection to AWS RDS after retries.")
         return None
 
-
     def get_table_names(self):
         """
         Retrieves the names of tables from the AWS RDS database using the SQL
@@ -82,11 +85,11 @@ class Postgres:
 
         Returns:
             list: A list of table names (str) present in the database.
-        
+
         Raises:
         psycopg2.ProgrammingError : If query is invalid
-        psycopg2.OperationalError : If an unusual error occured. Errors like Network issues
-    
+        psycopg2.OperationalError : If an unusual error occured. Errors like Net. issues
+
         """
         try:
             conn = self.connect_rds()
@@ -122,7 +125,7 @@ class Postgres:
             batch_size (int, optional): Number of rows to fetch per batch. Defaults to 10,000.
             max_attempts (int, optional): Maximum retry attempts for each batch. Defaults to 3.
             base_delay (int, optional): Initial delay (seconds) for backoff. Defaults to 1.
-        
+
         Raises:
             psycopg2.OperationalError : If an unusual error occured. Errors like Network issues
         """
@@ -155,9 +158,13 @@ class Postgres:
                         except psycopg2.OperationalError as e:
                             ingest_logger.error(f"⚠️ Error on attempt {attempt} for {table}: {e}")
                             if attempt == max_attempts:
-                                ingest_logger.error(f"❌ Max attempts reached for {table} batch at offset {offset}.  ⏩ Skipping batch.")
+                                ingest_logger.error(
+                                    f"""❌ Max attempts reached for {table} batch at offset {offset}
+                                    ⏩ Skipping batch.
+                                    """
+                                )
                                 break
-                            backoff =  (2 ** (attempt - 1))
+                            backoff = 2 ** (attempt - 1)
                             ingest_logger.warning(f"⚠️ Retrying in {backoff}s.............")
                             time.sleep(backoff)
                             attempt += 1

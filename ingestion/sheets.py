@@ -11,7 +11,10 @@ from log import ingest_logger
 
 class SheetsManager:
     def __init__(self, sheet_url=None, creds_file=None):
-        self.scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+        self.scope = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive",
+        ]
         self.creds_file = creds_file or "crested-pursuit-457714-c8-f5a68d29f980.json"
         self.sheet_url = sheet_url or os.getenv("SHEETS_URL")
         self.creds = Credentials.from_service_account_file(self.creds_file, scopes=self.scope)
@@ -36,7 +39,7 @@ class SheetsParser:
     def ingest_data(self, source, sheet_manager, df):
         try:
             title_parts = sheet_manager.sheet.title.split("-")
-            idx= title_parts.index("stores")
+            idx = title_parts.index("stores")
             sheets_title = title_parts[idx]
             data_class = MoveData(None, self.dst_client, None, self.dst_bucket)
             prefix = f"{source}/stores"

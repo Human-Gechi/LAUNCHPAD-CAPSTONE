@@ -8,9 +8,9 @@ import boto3
 import botocore.exceptions
 import pandas as pd
 
+from ingestion.config import get_config
 from ingestion.write import write_parquet
 from log import ingest_logger
-from ingestion.config import get_config
 
 
 # S3 client
@@ -22,10 +22,22 @@ class S3ClientFactory:
         secret_key = config[f"{prefix}_SECRET_KEY"]
         region = config[f"{prefix}_REGION"]
 
-        return boto3.client("s3", aws_access_key_id=access_key, aws_secret_access_key=secret_key, region_name=region)
+        return boto3.client(
+            "s3",
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key,
+            region_name=region,
+        )
+
 
 # s3 folders
-folders = {"inventory": "csv", "products": "csv", "suppliers": "csv", "warehouses": "csv", "shipments": "json"}
+folders = {
+    "inventory": "csv",
+    "products": "csv",
+    "suppliers": "csv",
+    "warehouses": "csv",
+    "shipments": "json",
+}
 
 
 # Ingestion class
@@ -35,7 +47,7 @@ class MoveData:
         self.dst_client = dst_client
         self.src_bucket = src_bucket
         self.dst_bucket = dst_bucket
-        self.data_source = 's3'
+        self.data_source = "s3"
 
     def validate_folders(self, source):
         global folders
@@ -123,7 +135,6 @@ class MoveData:
                         dfs.append((df, filename))
         return dfs
 
-
     def ingest_files(self, source: str):
         global folders
         max_retries = 5
@@ -138,28 +149,38 @@ class MoveData:
                             base = os.path.splitext(filename)[0]
                             if not self.exists_by_basename(prefix, base):
                                 write_parquet(df, self.data_source, prefix, base)
-                                ingest_logger.info(f"✅ {prefix}/{base} written to s3 in attempt-{attempt}")
+                                ingest_logger.info(
+                                    f"✅ {prefix}/{base} written to s3 in attempt-{attempt}"
+                                )
                             else:
-                                ingest_logger.info(f"⏩ Skipped {prefix}/{base} (file with base file '{base}' exists)")
+                                ingest_logger.info(
+                                    f"⏩Skipped{prefix}/{base} (file with base file '{base}' exist)"
+                                )
                         break
-
                     elif filetype == "json":
                         json_files = self.process_json_files(prefix)
                         for df, filename in json_files:
                             base = os.path.splitext(filename)[0]
                             if not self.exists_by_basename(prefix, base):
                                 write_parquet(df, self.data_source, prefix, base)
-                                ingest_logger.info(f"✅ {prefix}/{base} written to s3 in attempt-{attempt}")
+                                ingest_logger.info(
+                                    f"✅ {prefix}/{base} written to s3 in attempt-{attempt}"
+                                )
                             else:
-                                ingest_logger.info(f"⏩ Skipped {prefix}/{base} (file with base file '{base}' exists)")
+                                ingest_logger.info(
+                                    f"⏩ Skipped {prefix}/{base} (file '{base}'exist)"
+                                )
                         break
-
                 except Exception as e:
                     ingest_logger.error(f"❌ Error during ingestion of {prefix}: {e}")
                     if attempt == max_retries:
-                        ingest_logger.error(f"❌ Max trials reached for {prefix}. Skipping insertion, try again later")
+                        ingest_logger.error(
+                            f"❌ Max trials reached for {prefix}.Skipping insertion,try again later"
+                        )
                         break
                     backoff = 2 ** (attempt - 1)
-                    ingest_logger.info(f"Retrying {prefix} in {backoff} seconds (attempt {attempt}/{max_retries})...")
+                    ingest_logger.info(
+                        f"Retrying {prefix} in {backoff} seconds (attempt {attempt}/{max_retries})."
+                    )
                     time.sleep(backoff)
                     attempt += 1

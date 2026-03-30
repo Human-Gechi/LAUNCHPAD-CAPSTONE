@@ -1,16 +1,19 @@
-from ingestion.utility import time_stamp, full_timestamp, parquet_path
+from ingestion.utility import full_timestamp, parquet_path, time_stamp
+
 
 def test_time_stamp_format():
     ts = time_stamp()
-    #"YYYY-MM-DD HH:MM:SS"
+    # "YYYY-MM-DD HH:MM:SS"
     assert len(ts) == 19
-    assert ts[4] == '-' and ts[7] == '-' and ts[13] == ':'
+    assert ts[4] == "-" and ts[7] == "-" and ts[13] == ":"
+
 
 def test_full_timestamp_format():
     ts = full_timestamp()
-    #"YYYYMMDDTHHMMSSZ"
+    # "YYYYMMDDTHHMMSSZ"
     assert len(ts) == 16
-    assert ts[8] == 'T' and ts[-1] == 'Z'
+    assert ts[8] == "T" and ts[-1] == "Z"
+
 
 def test_parquet_path():
     folder = "raw/inventory"

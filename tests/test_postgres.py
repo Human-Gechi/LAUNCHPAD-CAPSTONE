@@ -1,5 +1,7 @@
+from unittest.mock import MagicMock, patch
+
 from ingestion.postgres import Postgres
-from unittest.mock import patch, MagicMock
+
 
 def test_connect_rds_success():
     mock_conn = MagicMock()
