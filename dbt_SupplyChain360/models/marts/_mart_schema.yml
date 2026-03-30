@@ -1,0 +1,210 @@
+version: 2
+
+models:
+  - name: dim_warehouses
+    description: "Warehouse dimension table with location details."
+    columns:
+      - name: warehouse_id
+        description: "Unique identifier for the warehouse."
+        data_tests:
+          - not_null
+          - unique
+          - no_whitespace
+      - name: city
+        description: "City where the warehouse is located."
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: state
+        description: "State where the warehouse is located."
+        data_tests:
+          - not_null
+          - no_whitespace
+
+  - name: dim_stores
+    description: "Store dimension table with location and region details."
+    columns:
+      - name: store_id
+        description: "Unique identifier for the store."
+        data_tests:
+          - not_null
+          - unique
+          - no_whitespace
+      - name: store_name
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: city
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: state
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: region
+        data_tests:
+          - not_null
+          - no_whitespace
+
+  - name: dim_products
+    description: "Product dimension table with product and supplier details."
+    columns:
+      - name: product_id
+        data_tests:
+          - not_null
+          - unique
+          - no_whitespace
+      - name: product_name
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: brand
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: category
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: supplier_id
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: unit_price
+        data_tests:
+          - not_null
+          - positive_value
+
+  - name: dim_supplier
+    description: "Supplier dimension table with supplier details."
+    columns:
+      - name: supplier_id
+        data_tests:
+          - not_null
+          - unique
+          - no_whitespace
+      - name: supplier_name
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: category
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: country
+        data_tests:
+          - not_null
+          - no_whitespace
+
+  - name: fct_transactions
+    description: "Fact table summarizing product-level sales and profitability metrics."
+    columns:
+      - name: product_id
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: product_name
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: total_quantity_sold
+        data_tests:
+          - not_null
+          - positive_value
+      - name: total_gross_revenue
+        data_tests:
+          - not_null
+          - positive_value
+      - name: total_net_revenue
+        data_tests:
+          - not_null
+          - positive_value
+      - name: total_net_profit_loss
+        data_tests:
+          - not_null
+      - name: num_transactions
+        data_tests:
+          - not_null
+          - positive_value
+
+  - name: fct_warehouse_efficiency
+    description: "Fact table summarizing warehouse efficiency and shipment performance."
+    columns:
+      - name: warehouse_id
+        data_tests:
+          - not_null
+          - no_whitespace
+          - unique
+      - name: warehouse_city
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: total_shipments_processed
+        data_tests:
+          - not_null
+          - positive_value
+      - name: avg_transit_days
+        data_tests:
+          - not_null
+          - positive_value
+      - name: warehouse_error_rate_pct
+        data_tests:
+          - not_null
+          - positive_value
+      - name: efficiency_rating
+        data_tests:
+          - not_null
+          - no_whitespace
+          - accepted_values:
+              arguments:
+                values : ['High Efficiency', 'Standard', 'Bottleneck Detected']
+
+  - name: fct_regional_sales
+    description: "Fact table summarizing sales and revenue by region."
+    columns:
+      - name: region
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: total_quantity_sold
+        data_tests:
+          - not_null
+          - positive_value
+      - name: total_revenue
+        data_tests:
+          - not_null
+          - positive_value
+
+  - name: fct_inventory
+    description: "Fact table providing inventory status for each product in each warehouse."
+    columns:
+      - name: warehouse_id
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: product_id
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: product_name
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name: quantity_available
+        data_tests:
+          - not_null
+          - positive_value
+      - name: reorder_threshold
+        data_tests:
+          - not_null
+          - positive_value
+      - name: stock_status
+        data_tests:
+          - not_null
+          - no_whitespace
+      - name : stock_to_threshold_ratio
+        data_tests:
+          - not_null
+          - positive_value
+          - no_whitespace

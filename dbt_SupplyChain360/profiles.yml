@@ -1,0 +1,18 @@
+snowflake_credentials:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "{{ env_var('DBT_SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('DBT_SNOWFLAKE_USER') }}"
+      password: "{{ env_var('DBT_SNOWFLAKE_PASSWORD') }}"
+      role: "{{ env_var('DBT_SNOWFLAKE_ROLE') }}"
+      database: "{{ env_var('DBT_SNOWFLAKE_DATABASE') }}"
+      warehouse: "{{ env_var('DBT_SNOWFLAKE_WAREHOUSE') }}"
+      schema: "{{ env_var('DBT_SNOWFLAKE_SCHEMA') }}"
+      threads: 4
+      client_session_keep_alive: False
+      connect_retries: 4
+      retry_on_database_errors: True
+      retry_all: True
+      reuse_connections: True
