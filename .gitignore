@@ -1,0 +1,17 @@
+venv
+*.terraform
+*.tfstate
+*tfstate.backup
+*DE-Supply-Chain_accessKeys.csv
+*awscliv2
+.ruff_cache
+awscliv2.zip
+*__pycache__
+*.pyc
+build
+*.egg-info
+streamlit_log.log
+*.log
+*.env
+crested-pursuit-457714-c8-f5a68d29f980.json
+.pytest_cache
