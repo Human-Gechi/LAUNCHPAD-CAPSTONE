@@ -7,36 +7,22 @@ from io import StringIO
 import boto3
 import botocore.exceptions
 import pandas as pd
-from dotenv import load_dotenv
 
 from ingestion.write import write_parquet
 from log import ingest_logger
-
-# Load environment variables
-load_dotenv()
-
-# Get credentials from env. file
-SRC_ACCESS_KEY = os.getenv("SRC_ACCESS_KEY")
-SRC_SECRET_KEY = os.getenv("SRC_SECRET_KEY")
-SRC_BUCKET = os.getenv("SRC_BUCKET")
-SRC_REGION = os.getenv("SRC_REGION")
-
-DST_ACCESS_KEY = os.getenv("DST_ACCESS_KEY")
-DST_SECRET_KEY = os.getenv("DST_SECRET_KEY")
-DST_BUCKET = os.getenv("DST_BUCKET")
-DST_REGION = os.getenv("DST_REGION")
-OBJECT_KEY = os.getenv("OBJECT_KEY")
+from ingestion.config import get_config
 
 
 # S3 client
 class S3ClientFactory:
     @staticmethod
-    def create_client(access_key, secret_key, region):
+    def create_client(prefix):
+        config = get_config()
+        access_key = config[f"{prefix}_ACCESS_KEY"]
+        secret_key = config[f"{prefix}_SECRET_KEY"]
+        region = config[f"{prefix}_REGION"]
+
         return boto3.client("s3", aws_access_key_id=access_key, aws_secret_access_key=secret_key, region_name=region)
-
-
-src_client = S3ClientFactory.create_client(SRC_ACCESS_KEY, SRC_SECRET_KEY, SRC_REGION)
-dst_client = S3ClientFactory.create_client(DST_ACCESS_KEY, DST_SECRET_KEY, DST_REGION)
 
 # s3 folders
 folders = {"inventory": "csv", "products": "csv", "suppliers": "csv", "warehouses": "csv", "shipments": "json"}

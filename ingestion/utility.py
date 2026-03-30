@@ -35,3 +35,4 @@ def parquet_path(folder: str, filename: str) -> str:
     ts = full_timestamp()
     path = f"{folder}/{filename}_{ts}.parquet"
     return path
+

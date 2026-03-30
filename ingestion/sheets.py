@@ -2,21 +2,11 @@ import os
 
 import gspread
 import pandas as pd
-from dotenv import load_dotenv
 from google.oauth2.service_account import Credentials
 
-from ingestion.s3_to_s3 import MoveData, S3ClientFactory
+from ingestion.s3_to_s3 import MoveData
 from ingestion.write import write_parquet
 from log import ingest_logger
-
-load_dotenv()
-
-DST_ACCESS_KEY = os.getenv("DST_ACCESS_KEY")
-DST_SECRET_KEY = os.getenv("DST_SECRET_KEY")
-DST_BUCKET = os.getenv("DST_BUCKET")
-DST_REGION = os.getenv("DST_REGION")
-
-dst_client = S3ClientFactory.create_client(DST_ACCESS_KEY, DST_SECRET_KEY, DST_REGION)
 
 
 class SheetsManager:

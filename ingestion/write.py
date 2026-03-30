@@ -8,19 +8,12 @@ import botocore.exceptions
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
-from dotenv import load_dotenv
+from ingestion.config import get_config
 
 from ingestion.utility import parquet_path, time_stamp
 
 # Local modules
 from log import ingest_logger
-
-load_dotenv()
-
-
-DST_PROFILE = "dev-Supply-Chain"
-DST_BUCKET = os.getenv("DST_BUCKET")
-
 
 def object_metadata(data_source: str, df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -49,7 +42,8 @@ def get_dest_s3_client():
     """
     try:
         # Session creation
-        session = boto3.Session(profile_name=DST_PROFILE)
+        config = get_config()
+        session = boto3.Session(profile_name=config["DST_PROFILE"], region_name=config["DST_REGION"])
         ingest_logger.info("✅ Session created successfully")
         return session.client("s3")
     except botocore.exceptions.ProfileNotFound:
@@ -73,6 +67,7 @@ def write_parquet(df: pd.DataFrame, data_source: str, folder: str, filename: str
         botocore.exceptions.ClientError: If there is an error uploading to S3.
         botocore.exceptions.EndpointConnectionError: If there is a network issue connecting to S3.
     """
+    config = get_config()
     # object meta data
     df = object_metadata(data_source, df)
 
@@ -95,9 +90,11 @@ def write_parquet(df: pd.DataFrame, data_source: str, folder: str, filename: str
     # Upload to your S3 bucket
     try:
         s3_client = get_dest_s3_client()
-        s3_client.put_object(Bucket=DST_BUCKET, Key=s3_key, Body=buffer.getvalue())
+        s3_client.put_object(Bucket=config["DST_BUCKET"], Key=s3_key, Body=buffer.getvalue())
         ingest_logger.info(f"✅Object {s3_key} sent ")
     except botocore.exceptions.ClientError as e:
         ingest_logger.error(f"❌An error occured {e}")
     except botocore.exceptions.EndpointConnectionError:
         ingest_logger.error("❌Check your network and try again later")
+
+get_dest_s3_client()

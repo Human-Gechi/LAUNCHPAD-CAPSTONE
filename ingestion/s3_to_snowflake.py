@@ -1,7 +1,6 @@
 import snowflake.connector
 import os
 import pandas as pd
-from dotenv import load_dotenv
 import pandas as pd
 import io
 import time
@@ -10,14 +9,8 @@ from ingestion.s3_to_s3 import S3ClientFactory
 from snowflake.connector.pandas_tools import write_pandas
 
 from log import ingest_logger
-load_dotenv()
 
-DST_ACCESS_KEY = os.getenv("DST_ACCESS_KEY")
-DST_SECRET_KEY = os.getenv("DST_SECRET_KEY")
-DST_BUCKET = os.getenv("DST_BUCKET")
-DST_REGION = os.getenv("DST_REGION")
-
-dst_client = S3ClientFactory.create_client(DST_ACCESS_KEY, DST_SECRET_KEY, DST_REGION)
+dst_client = S3ClientFactory.create_client("DST")
 base = 'raw/'
 
 pq_to_sf_type = {

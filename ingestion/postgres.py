@@ -11,12 +11,6 @@ load_dotenv()
 script_dir = os.path.dirname(os.path.abspath(__file__))
 sql_path = os.path.join(script_dir, 'tables.sql')
 
-DST_ACCESS_KEY = os.getenv("DST_ACCESS_KEY")
-DST_SECRET_KEY = os.getenv("DST_SECRET_KEY")
-DST_BUCKET = os.getenv("DST_BUCKET")
-DST_REGION = os.getenv("DST_REGION")
-
-dst_client = S3ClientFactory.create_client(DST_ACCESS_KEY, DST_SECRET_KEY, DST_REGION)
 
 class Postgres:
     """
