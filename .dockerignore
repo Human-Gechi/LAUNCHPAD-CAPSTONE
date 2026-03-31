@@ -1,0 +1,4 @@
+.env
+pytest.ini
+readme.md
+venv

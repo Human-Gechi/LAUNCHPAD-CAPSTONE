@@ -10,6 +10,7 @@ authors = [
 dependencies = [
     "boto3==1.42.71",
     "botocore==1.42.71",
+<<<<<<< HEAD
     "dotenv==0.9.9",
     "jmespath==1.1.0",
     "python-dateutil==2.9.0.post0",
@@ -19,6 +20,13 @@ dependencies = [
     "six==1.17.0",
     "urllib3==2.6.3"
 
+=======
+    "jmespath==1.1.0",
+    "python-dateutil==2.9.0.post0",
+    "s3transfer==0.16.0",
+    "six==1.17.0",
+    "urllib3==2.6.3"
+>>>>>>> 5600244be7559b982b0bd34b0ad64c314b3e5e30
 ]
 
 [project.optional-dependencies]
@@ -35,6 +43,7 @@ include = ["ingestion*", "infrastructure*"]
 exclude = ["awscliv2"]
 
 [tool.ruff]
+<<<<<<< HEAD
 line-length = 100
 target-version = "py311"
 
@@ -43,12 +52,24 @@ exclude = [
     "awscliv2",
     "README.md",
     ".env"
+=======
+line-length = 120
+target-version = "py311"
+exclude = [
+    "venv",
+    "awscliv2",
+    "README.md"
+>>>>>>> 5600244be7559b982b0bd34b0ad64c314b3e5e30
 ]
 
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+<<<<<<< HEAD
 line-ending = "lf"
 
 [tool.ruff.lint]
 select = ["E", "I"]
+=======
+line-ending = "lf"
+>>>>>>> 5600244be7559b982b0bd34b0ad64c314b3e5e30

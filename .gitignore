@@ -12,6 +12,10 @@ build
 *.egg-info
 streamlit_log.log
 *.log
+<<<<<<< HEAD
 *.env
 crested-pursuit-457714-c8-f5a68d29f980.json
 .pytest_cache
+=======
+*.env
+>>>>>>> 5600244be7559b982b0bd34b0ad64c314b3e5e30
