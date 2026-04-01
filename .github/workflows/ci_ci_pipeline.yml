@@ -30,11 +30,11 @@ jobs:
       - name: Run tests
         run: pytest
 
-      - name: Run dbt
-        run: dbt run --project-dir dbt_SupplyChain360 --profiles-dir dbt_SupplyChain360
+      - name: Debug dbt project
+        run: dbt debug --project-dir dbt_SupplyChain360 --profiles-dir dbt_SupplyChain360
 
-      - name: Compile dbt
-        run: dbt compile --profiles-dir dbt_SupplyChain360 --profiles-dir dbt_SupplyChain360
-
+      - name: Compile dbt project
+        run: dbt compile --project-dir dbt_SupplyChain360 --profiles-dir dbt_SupplyChain360
+        
       - name: Lint SQL
         run: sqlfluff lint dbt_SupplyChain360/models dbt_SupplyChain360/snapshots
