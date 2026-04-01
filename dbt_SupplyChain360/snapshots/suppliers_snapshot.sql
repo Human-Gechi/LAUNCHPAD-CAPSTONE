@@ -16,5 +16,4 @@ SELECT
     category,
     country
 FROM {{ ref('stg_suppliers') }}
-
 {% endsnapshot %}

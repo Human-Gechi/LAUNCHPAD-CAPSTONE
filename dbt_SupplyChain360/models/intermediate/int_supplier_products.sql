@@ -3,8 +3,8 @@
     )
 }}
 
-WITH products as (
-    SELECT * FROM {{ ref('stg_products')}}
+WITH products AS (
+    SELECT * FROM {{ ref('stg_products') }}
 ),
 
 suppliers AS (

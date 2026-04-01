@@ -18,5 +18,4 @@ SELECT
     region,
     store_open_date
 FROM {{ ref('stg_stores') }}
-
 {% endsnapshot %}

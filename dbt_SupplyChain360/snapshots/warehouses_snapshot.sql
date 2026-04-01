@@ -14,7 +14,6 @@
 SELECT
     warehouse_id,
     city,
-    state,
+    state
 FROM {{ ref('stg_warehouses') }}
-
 {% endsnapshot %}

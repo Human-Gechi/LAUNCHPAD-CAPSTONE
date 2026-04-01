@@ -18,5 +18,4 @@ SELECT
     supplier_id,
     unit_price
 FROM {{ ref('stg_products') }}
-
 {% endsnapshot %}

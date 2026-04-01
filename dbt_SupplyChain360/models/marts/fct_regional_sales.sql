@@ -1,4 +1,4 @@
-WITH stores AS(
+WITH stores AS (
     SELECT * FROM {{ ref('stg_stores') }}
 ),
 

@@ -7,9 +7,11 @@
 WITH shipments AS (
     SELECT * FROM {{ ref('stg_shipments') }}
 ),
+
 products AS (
     SELECT * FROM {{ ref('stg_products') }}
 ),
+
 stores AS (
     SELECT * FROM {{ ref('stg_stores') }}
 ),
@@ -25,19 +27,21 @@ shipments_tracking AS (
         st.store_name,
         st.region,
         st.city,
-        DATEDIFF(DAY, s.expected_delivery_date, s.actual_delivery_date) AS delivery_delay_days,
+        s.ingestion_date,
+        DATEDIFF(DAY, s.expected_delivery_date, s.actual_delivery_date)
+            AS delivery_delay_days,
         CASE
             WHEN s.actual_delivery_date < s.expected_delivery_date THEN 'Early'
             WHEN s.actual_delivery_date > s.expected_delivery_date THEN 'Late'
             ELSE 'On time'
-        END AS delivery_status,
-        s.ingestion_date
+        END AS delivery_status
     FROM shipments AS s
-    INNER JOIN products AS p ON p.product_id = s.product_id
-    INNER JOIN stores AS st ON st.store_id = s.store_id
+    INNER JOIN products AS p ON s.product_id = p.product_id
+    INNER JOIN stores AS st ON s.store_id = st.store_id
 )
-SELECT * FROM shipments_tracking as track
+
+SELECT * FROM shipments_tracking AS track
 
 {% if is_incremental() %}
-WHERE track.ingestion_date > (SELECT MAX(ingestion_date) FROM {{ this }})
+    WHERE track.ingestion_date > (SELECT MAX(ingestion_date) FROM {{ this }})
 {% endif %}
