@@ -9,7 +9,7 @@ default_args = {
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 3,
-    "retry_delay": timedelta(minutes=3)
+    "retry_delay": timedelta(minutes=3),
 }
 
 
@@ -18,7 +18,7 @@ default_args = {
     default_args=default_args,
     start_date=pendulum.datetime(2026, 3, 31),
     schedule="0 0 10 * *",
-    catchup=False
+    catchup=False,
 )
 def supplychain_360():
     @task(task_id="extract")

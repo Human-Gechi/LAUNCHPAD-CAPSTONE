@@ -99,5 +99,3 @@ def write_parquet(df: pd.DataFrame, data_source: str, folder: str, filename: str
         ingest_logger.error(f"❌An error occured {e}")
     except botocore.exceptions.EndpointConnectionError:
         ingest_logger.error("❌Check your network and try again later")
-
-
