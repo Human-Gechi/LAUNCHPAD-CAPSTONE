@@ -10,7 +10,9 @@ import pandas as pd
 
 from ingestion.config import get_config
 from ingestion.write import write_parquet
-from log import ingest_logger
+from logs.log import get_ingest_logger
+
+ingest_logger = get_ingest_logger()
 
 
 # S3 client

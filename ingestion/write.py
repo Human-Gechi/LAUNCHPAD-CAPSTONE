@@ -11,9 +11,9 @@ import pyarrow.parquet as pq
 
 from ingestion.config import get_config
 from ingestion.utility import parquet_path, time_stamp
+from logs.log import get_ingest_logger
 
-# Local modules
-from log import ingest_logger
+ingest_logger = get_ingest_logger()
 
 
 def object_metadata(data_source: str, df: pd.DataFrame) -> pd.DataFrame:
@@ -101,4 +101,3 @@ def write_parquet(df: pd.DataFrame, data_source: str, folder: str, filename: str
         ingest_logger.error("❌Check your network and try again later")
 
 
-get_dest_s3_client()

@@ -7,7 +7,10 @@ import snowflake.connector
 from snowflake.connector.pandas_tools import write_pandas
 
 from ingestion.s3_to_s3 import S3ClientFactory
-from log import ingest_logger
+from logs.log import get_ingest_logger
+
+ingest_logger = get_ingest_logger()
+
 
 dst_client = S3ClientFactory.create_client("DST")
 base = "raw/"

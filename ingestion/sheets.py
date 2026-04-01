@@ -6,7 +6,9 @@ from google.oauth2.service_account import Credentials
 
 from ingestion.s3_to_s3 import MoveData
 from ingestion.write import write_parquet
-from log import ingest_logger
+from logs.log import get_ingest_logger
+
+ingest_logger = get_ingest_logger()
 
 
 class SheetsManager:
