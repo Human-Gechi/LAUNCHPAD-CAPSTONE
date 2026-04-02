@@ -9,6 +9,15 @@ on:
 jobs:
   code-linting-formatting:
     runs-on: ubuntu-latest
+    env:
+      DBT_SNOWFLAKE_ACCOUNT: ${{ secrets.DBT_SNOWFLAKE_ACCOUNT }}
+      DBT_SNOWFLAKE_USER: ${{ secrets.DBT_SNOWFLAKE_USER }}
+      DBT_SNOWFLAKE_PASSWORD: ${{ secrets.DBT_SNOWFLAKE_PASSWORD }}
+      DBT_SNOWFLAKE_ROLE: ${{ secrets.DBT_SNOWFLAKE_ROLE }}
+      DBT_SNOWFLAKE_DATABASE: ${{ secrets.DBT_SNOWFLAKE_DATABASE }}
+      DBT_SNOWFLAKE_WAREHOUSE: ${{ secrets.DBT_SNOWFLAKE_WAREHOUSE }}
+      DBT_SNOWFLAKE_SCHEMA: ${{ secrets.DBT_SNOWFLAKE_SCHEMA }}
+      
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -35,6 +44,6 @@ jobs:
 
       - name: Compile dbt project
         run: dbt compile --project-dir dbt_SupplyChain360 --profiles-dir dbt_SupplyChain360
-        
+
       - name: Lint SQL
         run: sqlfluff lint dbt_SupplyChain360/models dbt_SupplyChain360/snapshots
