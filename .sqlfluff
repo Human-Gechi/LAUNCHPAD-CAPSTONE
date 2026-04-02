@@ -1,6 +1,7 @@
 [sqlfluff]
 templater = dbt
 dialect = snowflake
+exclude_rules = RF03, RF02
 
 [sqlfluff:templater:dbt]
 project_dir = dbt_SupplyChain360
@@ -19,6 +20,3 @@ dbt_source = {% macro source(source_name, table) %}{{source_name}}_{{table}}{% e
 dbt_config = {% macro config() %}{% for k in kwargs %}{% endfor %}{% endmacro %}
 dbt_var = {% macro var(variable, default='') %}item{% endmacro %}
 dbt_is_incremental = {% macro is_incremental() %}True{% endmacro %}
-
-[sqlfluff]
-exclude_rules = RF03, RF02
