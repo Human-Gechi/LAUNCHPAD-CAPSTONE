@@ -19,3 +19,7 @@ dbt_source = {% macro source(source_name, table) %}{{source_name}}_{{table}}{% e
 dbt_config = {% macro config() %}{% for k in kwargs %}{% endfor %}{% endmacro %}
 dbt_var = {% macro var(variable, default='') %}item{% endmacro %}
 dbt_is_incremental = {% macro is_incremental() %}True{% endmacro %}
+
+[sqlfluff:rules]
+RF02 = False
+RF03 = False
