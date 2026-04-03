@@ -6,7 +6,8 @@
       unique_key='store_id',
       strategy='check',
       check_cols=['city', 'state', 'region', 'store_name', 'store_open_date'],
-      invalidate_hard_delete=True
+      invalidate_hard_delete=True,
+      tags=['snapshots']
     )
 }}
 

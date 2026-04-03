@@ -15,4 +15,4 @@ SELECT
     MIN(ingestion_date) AS first_transaction_date,
     MAX(ingestion_date) AS last_transaction_date
 FROM {{ ref('int_transactions_enriched') }}
-GROUP BY 1, 2, 3, 4, 5
+GROUP BY 1, 2, 3, 4, 5, 6

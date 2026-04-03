@@ -17,3 +17,9 @@ crested-pursuit-457714-c8-f5a68d29f980.json
 .pytest_cache
 dag_processor
 dag_id=supply_chain_360
+docker-compose.yaml
+Dockerfile
+.crested-pursuit-457714-c8-f5a68d29f980.json
+.dbt_SupplyChain360
+.terraform.lock.
+linux

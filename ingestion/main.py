@@ -1,20 +1,25 @@
-from ingestion.config import get_config
-from ingestion.postgres import Postgres
-from ingestion.s3_to_s3 import MoveData, S3ClientFactory
-from ingestion.s3_to_snowflake import SnowFlake
-from ingestion.sheets import SheetsManager, SheetsParser
-
 base = "raw"
 
 
 def main():
+    """
+    Main function for data ingestion ndata
+    """
+    from ingestion.config import get_config
+    from ingestion.postgres import Postgres
+    from ingestion.s3_to_s3 import MoveData, S3ClientFactory
+    from ingestion.s3_to_snowflake import SnowFlake
+    from ingestion.sheets import SheetsManager, SheetsParser
+
     config = get_config()
+
     mover = MoveData(
         S3ClientFactory.create_client("SRC"),
         S3ClientFactory.create_client("DST"),
         config["SRC_BUCKET"],
         config["DST_BUCKET"],
     )
+    print(mover)
     mover.ingest_files(base)
 
     sheets = SheetsManager()
@@ -29,5 +34,4 @@ def main():
     sf.create_tables_from_directories()
 
 
-if __name__ == "__main__":
-    main()
+main()

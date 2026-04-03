@@ -117,7 +117,7 @@ class Postgres:
             ingest_logger.error(f"❌ An unexpected error occurred: {e}")
             return []
 
-    def ingest_data(self, source, batch_size=10000, max_attempts=5):
+    def ingest_data(self, source: str, batch_size=10000, max_attempts=5):
         """
         Ingests data from each table in the AWS RDS database in batches, concatenates the
         batches, and writes the complete DataFrame for each table to an S3 bucket in Parquet format.

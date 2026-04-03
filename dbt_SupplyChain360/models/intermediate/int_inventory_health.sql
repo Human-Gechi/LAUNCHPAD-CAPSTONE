@@ -1,6 +1,6 @@
 {{ config(
     materialized='incremental',
-    unique_key = ['warehouse_id', 'product_id']
+    unique_key = ['warehouse_id', 'product_id',]
     )
 }}
 WITH inventory AS (
@@ -43,5 +43,5 @@ stock_levels AS (
 
 SELECT * FROM stock_levels AS stock
 {% if is_incremental() %}
-    WHERE stock.ingestion_date >= (SELECT MAX(ingestion_date) FROM {{ this }})
+    WHERE stock.ingestion_date > (SELECT MAX(ingestion_date) FROM {{ this }})
 {% endif %}

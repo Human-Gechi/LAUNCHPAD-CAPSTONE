@@ -12,7 +12,8 @@ from ingestion.write import get_dest_s3_client, object_metadata, write_parquet
 def set_test_env(monkeypatch):
     monkeypatch.setenv("DST_BUCKET", "test-bucket")
     monkeypatch.setenv("DST_REGION", "eu-south-1")
-    monkeypatch.delenv("DST_PROFILE", raising=False)
+    monkeypatch.setenv("DST_ACCESS_KEY", "test-access-key")
+    monkeypatch.setenv("DST_SECRET_KEY", "test-secret-key")
 
 
 def test_object_metadata():
@@ -37,7 +38,12 @@ def test_get_dest_s3_client():
 
 @mock_aws
 def test_write_parquet():
-    s3 = boto3.client("s3", region_name=os.getenv("DST_REGION"))
+    s3 = boto3.client(
+        "s3",
+        aws_access_key_id=os.getenv("DST_ACCESS_KEY"),
+        aws_secret_access_key=os.getenv("DST_SECRET_KEY"),
+        region_name=os.getenv("DST_REGION"),
+    )
     s3.create_bucket(
         Bucket=os.getenv("DST_BUCKET"),
         CreateBucketConfiguration={"LocationConstraint": os.getenv("DST_REGION")},

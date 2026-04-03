@@ -38,19 +38,25 @@ def get_dest_s3_client():
     """
     Get for s3 client for destination AWS account.
 
+    Returns:
+            str: The S3 key where the Parquet file was uploaded.
+
     Raises:
-        botocore.exceptions.ProfileNotFound: If invalid profile name
+        botocore.exceptions.NoCredentialsError: If credentials are invalid
     """
     try:
         # Session creation
         config = get_config()
-        session = boto3.Session(
-            profile_name=config["DST_PROFILE"], region_name=config["DST_REGION"]
+
+        # return boto3 client for DST bucket
+        return boto3.client(
+            "s3",
+            aws_access_key_id=config["DST_ACCESS_KEY"],
+            aws_secret_access_key=config["DST_SECRET_KEY"],
+            region_name=config["DST_REGION"],
         )
-        ingest_logger.info("✅ Session created successfully")
-        return session.client("s3")
-    except botocore.exceptions.ProfileNotFound:
-        ingest_logger.error("❌ Destination profile not found")
+    except botocore.exceptions.NoCredentialsError:
+        ingest_logger.error("❌ Destination Credentials invalid ")
 
 
 def write_parquet(df: pd.DataFrame, data_source: str, folder: str, filename: str) -> str:
@@ -87,7 +93,7 @@ def write_parquet(df: pd.DataFrame, data_source: str, folder: str, filename: str
     # Move cursor to start of program
     buffer.seek(0)
 
-    # Build S3 source
+    # Convert to parquet file
     s3_key = parquet_path(folder, filename)
 
     # Upload to your S3 bucket

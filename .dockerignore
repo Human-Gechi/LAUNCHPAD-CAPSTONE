@@ -1,4 +1,11 @@
 .env
 pytest.ini
 readme.md
-venv
+.venv
+__pycache__
+.pytest_cache
+.ruff_cache
+.github
+.vscode
+dags\__pycache__\orchestrate.cpython-312.pyc
+ingestion\__pycache__

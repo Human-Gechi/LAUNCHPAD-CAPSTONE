@@ -29,7 +29,20 @@ pq_to_sf_type = {
 
 
 class SnowFlake:
+    """
+    Handles the transfer of data from s3 objects (parquet files) to Snowflake tables.
+    Provides methods for connecting to Snowflake, checking and creating tables,
+    processing files, and tracking processed files.
+    """
+
     def __init__(self, dst_client, dst_bucket):
+        """
+        Initialize the class above with destination s3 client and bucket, Snowflake credentials
+
+        Args:
+            dst_client (boto3.client): Destination S3 client.
+            dst_bucket (str): Destination S3 bucket name.
+        """
         self.user = os.getenv("SF_USER")
         self.password = os.getenv("SF_PASSWORD")
         self.account = os.getenv("SF_ACCOUNT")
@@ -60,7 +73,7 @@ class SnowFlake:
         ingest_logger.info("✅ Connection to Snowflake obtained")
         return conn
 
-    def parquet_dtypes_to_snowflake(self, pq_dtype):
+    def parquet_dtypes_to_snowflake(self, pq_dtype: str):
         """
         Maps parquet files data type to snowflake built in data types
 
@@ -69,12 +82,12 @@ class SnowFlake:
         """
         return pq_to_sf_type.get(pq_dtype)
 
-    def table_exists(self, cur, table_name):
+    def table_exists(self, cur, table_name: str):
         """
         Checks for the existence of tables
 
         Returns:
-            The count of values in the tables
+            The count of values in the tables. If >0 => table exists and has contents
         """
         cur.execute(
             f"""
@@ -90,11 +103,11 @@ class SnowFlake:
         Return a set of unique directories under the given prefix.
 
         For instance:
-            directories = raw/inventory, raw/products ........
+            directories = raw/inventory, raw/products, etc ........
             base_directory = raw (base)
 
         Returns:
-            directories: Strings splitted at /
+            directories: Strings splitted at (/)
             directories : inventory, products
         """
         files = self.dst_client.list_objects_v2(Bucket=self.dst_bucket, Prefix=base)
@@ -106,7 +119,17 @@ class SnowFlake:
                 directories.add(parts[1])
         return directories
 
-    def get_parquet_files_in_dir(self, directory):
+    def get_parquet_files_in_dir(self, directory: str):
+        """
+        Return a set of unique files under a particular directory
+
+        Args:
+            directory:  Unique directories
+
+        Returns:
+            directories: Strings splitted at (/)
+            directories : inventory, products
+        """
         files = self.dst_client.list_objects_v2(
             Bucket=self.dst_bucket, Prefix=f"{base}{directory}/"
         )
@@ -120,6 +143,12 @@ class SnowFlake:
         return parquet_files
 
     def create_processed_files_table(self, conn):
+        """
+        Create a table in Snowflake to record processed files and for idempotency.
+
+        Args:
+            conn: Snowflake connection.
+        """
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -133,7 +162,16 @@ class SnowFlake:
             """
             )
 
-    def is_file_processed(self, cur, file_key, etag):
+    def is_file_processed(self, cur, file_key: str, etag: str) -> bool:
+        """
+        Checks if a file has been processed
+
+        Args:
+            cur (snowflake.connector.cursor.SnowflakeCursor): Active Snowflake cursor.
+            file_key (str): S3 key of the file.
+            etag (str): ETag of the file.
+
+        """
         cur.execute(
             "SELECT 1 FROM PROCESSED_FILES WHERE FILE_KEY = %s AND ETAG = %s",
             (
@@ -143,13 +181,32 @@ class SnowFlake:
         )
         return cur.fetchone() is not None
 
-    def mark_file_processed(self, cur, file_key, etag, lastmodified):
+    def mark_file_processed(self, cur, file_key: str, etag: str, lastmodified):
+        """
+        Mark a file as processed by inserting its key, etag,
+        and last modified timestamp into the tracking table.
+
+        Args:
+            cur (snowflake.connector.cursor.SnowflakeCursor): Snowflake cursor.
+            file_key (str): s3 key of the file.
+            etag (str): ETag of the file in s3
+            lastmodified (datetime): Last modified timestamp of the file.
+        """
         cur.execute(
             "INSERT INTO PROCESSED_FILES (FILE_KEY, ETAG, LAST_MODIFIED) VALUES (%s, %s, %s)",
             (file_key, etag, lastmodified),
         )
 
-    def get_df(self, key):
+    def get_df(self, key: str):
+        """
+        Retrieves a parquet file from S3 and load it into a pandas DataFrame.
+
+        Args:
+            key (str): key of the parquet file.
+
+        Returns:
+            pd.DataFrame
+        """
         obj = self.dst_client.get_object(Bucket=self.dst_bucket, Key=key)
         data = obj["Body"].read()
         df = pd.read_parquet(io.BytesIO(data))
@@ -157,13 +214,31 @@ class SnowFlake:
         return df
 
     def get_columns_sql(self, df):
+        """
+        Generate a string for column definitions based on a DataFrame's columns
+        and dtypes used to create tables
+
+        Args:
+            df (pd.DataFrame): DataFrame the clumns and dtypes are extracted
+
+        Returns:
+            str: SQL string for column definitions.
+        """
         columns = []
         for col, dtype in zip(df.columns, df.dtypes):
             sf_type = self.parquet_dtypes_to_snowflake(dtype.name)
             columns.append(f"{col} {sf_type}")
-        return ", ".join(columns)
+        return ", ".join(columns)  # join each column and its dtype
 
-    def create_table(self, cur, table, columns_sql):
+    def create_table(self, cur, table: str, columns_sql: str):
+        """
+        Create a table in Snowflake if it does not already exist.
+
+        Args:
+            cur (snowflake.connector.cursor.SnowflakeCursor): Active Snowflake cursor.
+            table (str): Table name.
+            columns_sql (str): SQL string of column definitions.
+        """
         create_sql = f"""
         CREATE TABLE IF NOT EXISTS {table} ({columns_sql}, 
             ingestion_date TIMESTAMP_NTZ DEFAULT 
@@ -173,13 +248,38 @@ class SnowFlake:
             ingest_logger.info(f"Creating new table {table}")
             cur.execute(create_sql)
 
-    def create_staging_table(self, cur, table, columns_sql):
+    def create_staging_table(self, cur, table: str, columns_sql: str) -> str:
+        """
+        Create or replace a staging table in Snowflake for batch upserts(using MERGE INTO)
+
+        Args:
+            cur (snowflake.connector.cursor.SnowflakeCursor): Active Snowflake cursor.
+            table (str): Table name.
+            columns_sql (str): SQL string for defining columns
+
+        Returns:
+            str: The name of the staging table created.
+        """
         staging_table = f"{table}_STAGING"
         cur.execute(f"CREATE OR REPLACE TABLE {staging_table} ({columns_sql});")
         ingest_logger.info(f"Staging table {staging_table} created")
         return staging_table
 
-    def upsert_batches(self, conn, cur, df, table, staging_table, batch_size, key):
+    def upsert_batches(
+        self, conn, cur, df: pd.DataFrame, table: str, staging_table: str, batch_size: str, key: str
+    ) -> str:
+        """
+        Upsert data from a DataFrame into a Snowflake table in batches using a staging table.
+
+        Args:
+            conn : Snowflake connection.
+            cur (snowflake.connector.cursor.SnowflakeCursor): Active Snowflake cursor.
+            df (pd.DataFrame): DataFrame to upsert.
+            table (str): Target table name.
+            staging_table (str): Staging table name.
+            batch_size (int): Number of rows per batch.
+            key (str): s3 key of source object
+        """
         for start in range(0, len(df), batch_size):
             end = start + batch_size
             batch_df = df.iloc[start:end].reset_index(drop=True)
@@ -200,7 +300,29 @@ class SnowFlake:
                 0
             ingest_logger.info(f"📌 Upserted {count} rows into {table} from file {key}")
 
-    def process_file(self, conn, cur, file_info, table, staging_table, batch_size, max_retries):
+    def process_file(
+        self,
+        conn,
+        cur,
+        file_info: dict,
+        table: str,
+        staging_table: str,
+        batch_size: int,
+        max_retries: str,
+    ):
+        """
+        Process a single parquet file from a directory:
+        download, deduplicate, upsert to Snowflake, and mark as processed.
+
+        Args:
+            conn:  Snowflake connection.
+            cur: Active Snowflake cursor.
+            file_info (dict): Dict with keys 'key', 'etag', 'last_modified' for the file.
+            table (str): Table name.
+            staging_table (str): Staging table name.
+            batch_size (int): Number of rows per batch.
+            max_retries (int): Maximum number of retries for processing the file in a run.
+        """
         key = file_info["key"]
         etag = file_info["etag"]
         last_modified = file_info["last_modified"]
@@ -237,8 +359,19 @@ class SnowFlake:
                         f"Failed to process file {key} after {max_retries} attempts. Skipping."
                     )
 
-    def process_directory(self, conn, cur, directory, batch_size, max_retries):
-        table = directory.upper()
+    def process_directory(self, conn, cur, directory: str, batch_size: int, max_retries: int):
+        """
+        Process all parquet files in a directory:
+        create tables, upsert data, and clean up staging tables.
+
+        Args:
+            conn (snowflake.connector.connection.SnowflakeConnection): Snowflake connection.
+            cur: Active Snowflake cursor.
+            directory (str): Directory to process.
+            batch_size (int): Number of rows per batch.
+            max_retries (int): Maximum number of retries for processing files.
+        """
+        table = directory.upper()  # Snowflake is case sensitive
         ingest_logger.info(f"🔄️ Processing directory: {directory} -> table: {table}")
         parquet_files = self.get_parquet_files_in_dir(directory)
         if not parquet_files:
@@ -257,6 +390,11 @@ class SnowFlake:
         ingest_logger.info(f"✅ Staging table {staging_table} dropped")
 
     def create_tables_from_directories(self):
+        """
+        Main pipeline to process all directories: create tables, process files, and handle retries"
+
+        Retries the data pipeline up to max_retries times in case of errors.
+        """
         max_retries = 5
         batch_size = 50000
         attempt = 1

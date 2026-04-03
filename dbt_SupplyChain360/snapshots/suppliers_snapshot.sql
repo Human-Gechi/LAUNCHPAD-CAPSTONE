@@ -6,7 +6,8 @@
       unique_key='supplier_id',
       strategy='check',
       check_cols=['supplier_name', 'category', 'country'],
-      invalidate_hard_delete=True
+      invalidate_hard_delete=True,
+      tags=['snapshots']
     )
 }}
 

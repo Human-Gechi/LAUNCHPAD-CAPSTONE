@@ -1,3 +1,8 @@
+{{ config(
+    materialized='incremental',
+    unique_key = ['transaction_id', 'product_id', 'store_id']
+    )
+}}
 WITH transactions AS (
     SELECT * FROM {{ ref('stg_transactions') }}
 ),
@@ -59,3 +64,6 @@ SELECT
     END AS financial_status
 
 FROM product_calculations AS pc
+{% if is_incremental() %}
+    WHERE pc.ingestion_date > (SELECT max(ingestion_date) FROM {{ this }})
+{% endif %}

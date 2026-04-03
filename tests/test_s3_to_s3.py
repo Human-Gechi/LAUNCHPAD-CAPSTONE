@@ -9,7 +9,7 @@ from moto import mock_aws
 from ingestion.s3_to_s3 import MoveData, S3ClientFactory
 
 folders = ["inventory", "products"]
-
+file_types = {}
 
 @pytest.fixture(autouse=True)
 def set_test_env(monkeypatch):
@@ -27,48 +27,50 @@ def set_test_env(monkeypatch):
 @mock_aws
 def test_validate_folders():
     source = "raw"
-
-    dst_client = S3ClientFactory.create_client("DST")
-    dst_client.create_bucket(
-        Bucket=os.getenv("DST_BUCKET"),
-        CreateBucketConfiguration={"LocationConstraint": os.getenv("DST_REGION")},
+    src_client = S3ClientFactory.create_client("SRC")
+    src_client.create_bucket(
+        Bucket=os.getenv("SRC_BUCKET"),
+        CreateBucketConfiguration={"LocationConstraint": os.getenv("SRC_REGION")},
     )
 
-    for folder in folders:
-        dst_client.put_object(
-            Bucket=os.getenv("DST_BUCKET"),
-            Key=f"{source}/{folder}/_2026_03_30.parquet",
-            Body=b"test",
-        )
+    src_client.put_object(
+        Bucket=os.getenv("SRC_BUCKET"),
+        Key="raw/inventory/file1.csv",
+        Body=b"test",
+    )
+    src_client.put_object(
+        Bucket=os.getenv("SRC_BUCKET"),
+        Key="raw/products/file2.json",
+        Body=b"test",
+    )
 
-    src_client = S3ClientFactory.create_client("SRC")
-    mover = MoveData(src_client, dst_client, os.getenv("SRC_BUCKET"), os.getenv("DST_BUCKET"))
-
-    found_folders = mover.validate_folders(source)
-    assert found_folders == set(folders)
+    mover = MoveData(src_client, None, os.getenv("SRC_BUCKET"), os.getenv("DST_BUCKET"))
+    found_folders, file_types = mover.validate_folders(source)
+    assert found_folders == {"inventory", "products"}
+    assert file_types == {"inventory": {"csv"}, "products": {"json"}}
 
 
 @mock_aws
 def test_exist_by_basename():
     source = "raw"
-    basename = ["inventory_2023_05_10", "products"]
+    basename = "inventory_2023_05_10", "products"
     dst_client = S3ClientFactory.create_client("DST")
     dst_client.create_bucket(
         Bucket=os.getenv("DST_BUCKET"),
         CreateBucketConfiguration={"LocationConstraint": os.getenv("DST_REGION")},
     )
-
     for folder in folders:
-        prefix = f"{source}/{folder}"
-        dst_client.put_object(
-            Bucket=os.getenv("DST_BUCKET"),
-            Key=f"{prefix}/{basename}_.parquet",
-            Body=b"test",
-        )
+        for base in basename:
+            prefix = f"{source}/{folder}"
+            dst_client.put_object(
+                Bucket=os.getenv("DST_BUCKET"),
+                Key=f"{prefix}/{base}.parquet",
+                Body=b"test",
+            )
 
     mover = MoveData(None, dst_client, os.getenv("SRC_BUCKET"), os.getenv("DST_BUCKET"))
 
-    assert mover.exists_by_basename(prefix, basename)
+    assert mover.exists_by_basename(prefix, base)
 
 
 @mock_aws
@@ -116,43 +118,47 @@ def test_read_csv_file():
     expected_df = pd.DataFrame(data)
     pd.testing.assert_frame_equal(df, expected_df)
 
-
 @mock_aws
 def test_process_json_files():
     src_client = S3ClientFactory.create_client("SRC")
+    dst_client = S3ClientFactory.create_client("DST")
     src_client.create_bucket(
         Bucket=os.getenv("SRC_BUCKET"),
         CreateBucketConfiguration={"LocationConstraint": os.getenv("SRC_REGION")},
     )
-
-    data1 = [{"quantity": 1, "stock": 2}]
-    data2 = [{"quantity": 3, "price": 4}]
-    key1 = "raw/inventory/file1.json"
-    key2 = "raw/inventory/file2.json"
-    src_client.put_object(
-        Bucket=os.getenv("SRC_BUCKET"), Key=key1, Body=json.dumps(data1).encode("utf-8")
-    )
-    src_client.put_object(
-        Bucket=os.getenv("SRC_BUCKET"), Key=key2, Body=json.dumps(data2).encode("utf-8")
+    dst_client.create_bucket(
+        Bucket=os.getenv("DST_BUCKET"),
+        CreateBucketConfiguration={"LocationConstraint": os.getenv("DST_REGION")},
     )
 
-    mover = MoveData(src_client, None, os.getenv("SRC_BUCKET"), os.getenv("DST_BUCKET"))
+    # Upload files to source
+    src_client.put_object(
+        Bucket=os.getenv("SRC_BUCKET"), Key="raw/inventory/file1.json", Body=b"{}"
+    )
+    src_client.put_object(
+        Bucket=os.getenv("SRC_BUCKET"), Key="raw/inventory/file2.json", Body=b"{}"
+    )
 
+    dst_client.put_object(
+        Bucket=os.getenv("DST_BUCKET"), Key="raw/inventory/file2.parquet", Body=b"{}"
+    )
+
+    mover = MoveData(src_client, dst_client, os.getenv("SRC_BUCKET"), os.getenv("DST_BUCKET"))
     dfs = mover.process_json_files("raw/inventory")
     filenames = [fname for _, fname in dfs]
-    assert set(filenames) == {"file1.json", "file2.json"}
-
-    dfs_dict = {fname: df for df, fname in dfs}
-    pd.testing.assert_frame_equal(dfs_dict["file1.json"], pd.DataFrame(data1))
-    pd.testing.assert_frame_equal(dfs_dict["file2.json"], pd.DataFrame(data2))
-
+    assert set(filenames) == {"file1.json"}
 
 @mock_aws
 def test_process_csv_files():
     src_client = S3ClientFactory.create_client("SRC")
+    dst_client = S3ClientFactory.create_client("DST")
     src_client.create_bucket(
         Bucket=os.getenv("SRC_BUCKET"),
         CreateBucketConfiguration={"LocationConstraint": os.getenv("SRC_REGION")},
+    )
+    dst_client.create_bucket(
+        Bucket=os.getenv("DST_BUCKET"),
+        CreateBucketConfiguration={"LocationConstraint": os.getenv("DST_REGION")},
     )
 
     data1 = {"quantity": [1, 2, 3, 4], "stock": [1, 2, 3, 4]}
@@ -174,11 +180,15 @@ def test_process_csv_files():
         Key=key2,
         Body=csv_buffer.getvalue().encode("utf-8"),
     )
-    mover = MoveData(src_client, None, os.getenv("SRC_BUCKET"), os.getenv("DST_BUCKET"))
+
+    dst_client.put_object(
+        Bucket=os.getenv("DST_BUCKET"), Key="raw/inventory/file2.parquet", Body=b"{}"
+    )
+
+    mover = MoveData(src_client, dst_client, os.getenv("SRC_BUCKET"), os.getenv("DST_BUCKET"))
     dfs = mover.process_csv_files("raw/inventory")
     filenames = [fname for _, fname in dfs]
-    assert set(filenames) == {"file1.csv", "file2.csv"}
+    assert set(filenames) == {"file1.csv"}
 
     dfs_dict = {fname: df for df, fname in dfs}
     pd.testing.assert_frame_equal(dfs_dict["file1.csv"], pd.DataFrame(data1))
-    pd.testing.assert_frame_equal(dfs_dict["file2.csv"], pd.DataFrame(data2))

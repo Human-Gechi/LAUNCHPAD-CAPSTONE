@@ -6,6 +6,7 @@ load_dotenv()
 
 
 def get_config():
+    """Credentials for AWS Secrets"""
     return {
         "DST_BUCKET": os.getenv("DST_BUCKET"),
         "DST_REGION": os.getenv("DST_REGION"),

@@ -1,9 +1,9 @@
 locals {
   common_tags = {
     Project     = var.project_name
-    Environment = var.profile
+    Environment = var.environment
     Region      = var.region
-    Team        = "Data Engineering"
+    Team        = var.team
   }
 
   s3_folders = [

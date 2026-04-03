@@ -1,6 +1,6 @@
 {{ config(
     materialized='incremental',
-    unique_key = ['warehouse_id', 'product_id', 'snapshot_date', 'quantity_available', 'ingestion_date','reorder_threshold','']
+    unique_key=['warehouse_id', 'product_id', 'snapshot_date', 'quantity_available', 'ingestion_date','reorder_threshold']
     )
 }}
 SELECT DISTINCT

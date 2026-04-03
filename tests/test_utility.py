@@ -2,6 +2,7 @@ from ingestion.utility import full_timestamp, parquet_path, time_stamp
 
 
 def test_time_stamp_format():
+    """Function to check if it retruns a timestamp"""
     ts = time_stamp()
     # "YYYY-MM-DD HH:MM:SS"
     assert len(ts) == 19
