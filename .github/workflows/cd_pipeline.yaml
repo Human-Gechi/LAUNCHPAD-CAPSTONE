@@ -22,17 +22,17 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         run: |
-          aws ecr get-login-password --region eu-north-1| \
-          docker login --username AWS --password-stdin 601955859589.dkr.ecr.eu-north.amazonaws.com
-
+            aws ecr get-login-password --region eu-north-1 | \
+            docker login --username AWS --password-stdin 601955859589.dkr.ecr.eu-north-1.amazonaws.com
+            
       - name: Build Docker image
         run: |
           docker build -t capstone:latest .
 
       - name: Tag Docker image
         run: |
-          docker tag capstone:latest 601955859589.dkr.ecr.us-east-1.amazonaws.com/capstone:latest
+          docker tag capstone:latest 601955859589.dkr.ecr.eu-north-1.amazonaws.com/capstone/dec-project
 
       - name: Push Docker image to ECR
         run: |
-          docker push 601955859589.dkr.ecr.us-east-1.amazonaws.com/capstone:latest
+          docker push 601955859589.dkr.ecr.eu-north-1.amazonaws.com/capstone/dec-project
