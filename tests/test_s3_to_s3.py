@@ -11,6 +11,7 @@ from ingestion.s3_to_s3 import MoveData, S3ClientFactory
 folders = ["inventory", "products"]
 file_types = {}
 
+
 @pytest.fixture(autouse=True)
 def set_test_env(monkeypatch):
     monkeypatch.setenv("DST_BUCKET", "test-bucket")
@@ -118,6 +119,7 @@ def test_read_csv_file():
     expected_df = pd.DataFrame(data)
     pd.testing.assert_frame_equal(df, expected_df)
 
+
 @mock_aws
 def test_process_json_files():
     src_client = S3ClientFactory.create_client("SRC")
@@ -147,6 +149,7 @@ def test_process_json_files():
     dfs = mover.process_json_files("raw/inventory")
     filenames = [fname for _, fname in dfs]
     assert set(filenames) == {"file1.json"}
+
 
 @mock_aws
 def test_process_csv_files():

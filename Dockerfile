@@ -1,4 +1,19 @@
-FROM apache/airflow:3.1.2
+FROM apache/airflow:3.1.5
+
+USER root
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        curl \
+        git \
+        vim \
+        libpq-dev \
+        gcc \
+        libssl-dev \
+        libffi-dev \
+        default-libmysqlclient-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ENV AIRFLOW_UID=50000
 USER airflow

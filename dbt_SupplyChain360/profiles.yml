@@ -1,15 +1,15 @@
 snowflake_credentials:
-  target: dev
+  target: prod
   outputs:
     dev:
       type: snowflake
-      account: "{{ env_var('DBT_SNOWFLAKE_ACCOUNT') }}"
-      user: "{{ env_var('DBT_SNOWFLAKE_USER') }}"
-      password: "{{ env_var('DBT_SNOWFLAKE_PASSWORD') }}"
-      role: "{{ env_var('DBT_SNOWFLAKE_ROLE') }}"
-      database: "{{ env_var('DBT_SNOWFLAKE_DATABASE') }}"
-      warehouse: "{{ env_var('DBT_SNOWFLAKE_WAREHOUSE') }}"
-      schema: "{{ env_var('DBT_SNOWFLAKE_SCHEMA') }}"
+      account: "{{ env_var('SF_ACCOUNT') }}"
+      user: "{{ env_var('SF_USER') }}"
+      password: "{{ env_var('SF_PASSWORD') }}"
+      role: "{{ env_var('SF_ROLE') }}"
+      database: "{{ env_var('SF_DATABASE') }}"
+      warehouse: "{{ env_var('SF_WAREHOUSE') }}"
+      schema: "{{ env_var('SF_SCHEMA') }}"
       threads: 4
       client_session_keep_alive: False
       connect_retries: 4
