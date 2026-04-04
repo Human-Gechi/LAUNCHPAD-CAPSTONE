@@ -41,7 +41,7 @@ stock_levels AS (
     INNER JOIN products AS p ON i.product_id = p.product_id
 )
 
-SELECT * FROM stock_level
+SELECT * FROM stock_levels
 {% if is_incremental() %}
-    WHERE stock_level.ingestion_date > (SELECT MAX(ingestion_date) FROM {{ this }})
+    WHERE stock_levels.ingestion_date > (SELECT MAX(ingestion_date) FROM {{ this }})
 {% endif %}
