@@ -10,13 +10,13 @@ jobs:
   code-linting-formatting:
     runs-on: ubuntu-latest
     env:
-      DBT_SNOWFLAKE_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
-      DBT_SNOWFLAKE_USER: ${{ secrets.SF_USER }}
-      DBT_SNOWFLAKE_PASSWORD: ${{ secrets.SF_PASSWORD }}
-      DBT_SNOWFLAKE_ROLE: ${{ secrets.SF_ROLE }}
-      DBT_SNOWFLAKE_DATABASE: ${{ secrets.SF_DB }}
-      DBT_SNOWFLAKE_WAREHOUSE: ${{ secrets.SF_WH }}
-      DBT_SNOWFLAKE_SCHEMA: ${{ secrets.SF_SCHEMA }}
+      SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+      SF_USER: ${{ secrets.SF_USER }}
+      SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
+      SF_ROLE: ${{ secrets.SF_ROLE }}
+      SF_DB: ${{ secrets.SF_DB }}
+      SF_WH: ${{ secrets.SF_WH }}
+      SF_SCHEMA: ${{ secrets.SF_SCHEMA }}
 
     steps:
       - name: Checkout Code
