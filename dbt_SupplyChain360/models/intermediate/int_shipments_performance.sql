@@ -40,8 +40,8 @@ shipments_tracking AS (
     INNER JOIN stores AS st ON s.store_id = st.store_id
 )
 
-SELECT * FROM shipments_tracking AS track
+SELECT * FROM shipments_tracking
 
 {% if is_incremental() %}
-    WHERE track.ingestion_date > (SELECT MAX(ingestion_date) FROM {{ this }})
+    WHERE shipments_tracking.ingestion_date > (SELECT MAX(ingestion_date) FROM {{ this }})
 {% endif %}

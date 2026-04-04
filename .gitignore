@@ -23,3 +23,6 @@ Dockerfile
 .dbt_SupplyChain360
 .terraform.lock.
 linux
+fetch.sh
+.terraform.tfstate.lock.info
+.terraform.lock.hcl
