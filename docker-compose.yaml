@@ -79,7 +79,6 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
-    - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
     - ${AIRFLOW_PROJ_DIR:-.}/ingestion:/opt/airflow/ingestion
     - ${AIRFLOW_PROJ_DIR:-.}/crested-pursuit-457714-c8-f5a68d29f980.json:/opt/airflow/crested-pursuit-457714-c8-f5a68d29f980.json
     - ${AIRFLOW_PROJ_DIR:-.}/dbt_SupplyChain360:/opt/airflow/dbt_SupplyChain360
