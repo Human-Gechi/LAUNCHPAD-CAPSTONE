@@ -24,7 +24,7 @@ jobs:
         run: |
             aws ecr get-login-password --region eu-north-1 | \
             docker login --username AWS --password-stdin 601955859589.dkr.ecr.eu-north-1.amazonaws.com
-            
+
       - name: Build Docker image
         run: |
           docker build -t capstone:latest .

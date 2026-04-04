@@ -11,7 +11,6 @@ from logs.log import get_ingest_logger
 
 ingest_logger = get_ingest_logger()
 
-
 dst_client = S3ClientFactory.create_client("DST")
 base = "raw/"
 
@@ -151,8 +150,8 @@ class SnowFlake:
         """
         with conn.cursor() as cur:
             cur.execute(
-                """
-                CREATE TABLE IF NOT EXISTS PROCESSED_FILES (
+                f"""
+                CREATE TABLE IF NOT EXISTS {self.database}.{self.schema}.PROCESSED_FILES (
                     FILE_KEY VARCHAR(1024),
                     ETAG VARCHAR(64),
                     LAST_MODIFIED TIMESTAMP_NTZ,
@@ -193,7 +192,8 @@ class SnowFlake:
             lastmodified (datetime): Last modified timestamp of the file.
         """
         cur.execute(
-            "INSERT INTO PROCESSED_FILES (FILE_KEY, ETAG, LAST_MODIFIED) VALUES (%s, %s, %s)",
+            f"""INSERT INTO {self.database}.{self.schema}.PROCESSED_FILES 
+            (FILE_KEY, ETAG, LAST_MODIFIED) VALUES (%s, %s, %s)""",
             (file_key, etag, lastmodified),
         )
 
@@ -240,8 +240,8 @@ class SnowFlake:
             columns_sql (str): SQL string of column definitions.
         """
         create_sql = f"""
-        CREATE TABLE IF NOT EXISTS {table} ({columns_sql}, 
-            ingestion_date TIMESTAMP_NTZ DEFAULT 
+        CREATE TABLE IF NOT EXISTS {self.database}.{self.schema}.{table} ({columns_sql},
+            ingestion_date TIMESTAMP_NTZ DEFAULT
             CONVERT_TIMEZONE(\'Africa/Lagos\', CURRENT_TIMESTAMP())::TIMESTAMP_NTZ);
         """
         if not self.table_exists(cur, table):
@@ -261,7 +261,10 @@ class SnowFlake:
             str: The name of the staging table created.
         """
         staging_table = f"{table}_STAGING"
-        cur.execute(f"CREATE OR REPLACE TABLE {staging_table} ({columns_sql});")
+        cur.execute(
+            f"""CREATE OR REPLACE TABLE {self.database}.{self.schema}.{staging_table} 
+            ({columns_sql});"""
+        )
         ingest_logger.info(f"Staging table {staging_table} created")
         return staging_table
 
@@ -283,11 +286,11 @@ class SnowFlake:
         for start in range(0, len(df), batch_size):
             end = start + batch_size
             batch_df = df.iloc[start:end].reset_index(drop=True)
-            cur.execute(f"TRUNCATE TABLE {staging_table}")
+            cur.execute(f"TRUNCATE TABLE {self.database}.{self.schema}.{staging_table}")
             write_pandas(conn, batch_df, staging_table)
             merge_sql = f"""
-                MERGE INTO {table} t
-                USING {staging_table} s
+                MERGE INTO {self.database}.{self.schema}.{table} t
+                USING {self.database}.{self.schema}.{staging_table} s
                 ON ({" AND ".join([f't."{col}" = s."{col}"' for col in df.columns])})
                 WHEN NOT MATCHED THEN
                 INSERT ({', '.join([f'"{col}"' for col in df.columns])})
@@ -386,7 +389,7 @@ class SnowFlake:
         for file_info in parquet_files:
             self.process_file(conn, cur, file_info, table, staging_table, batch_size, max_retries)
 
-        cur.execute(f"DROP TABLE IF EXISTS {staging_table}")
+        cur.execute(f"DROP TABLE IF EXISTS {self.database}.{self.schema}.{staging_table}")
         ingest_logger.info(f"✅ Staging table {staging_table} dropped")
 
     def create_tables_from_directories(self):
