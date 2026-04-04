@@ -7,7 +7,7 @@ exclude_rules = RF03, RF02
 project_dir = dbt_SupplyChain360
 profiles_dir = dbt_SupplyChain360
 profile = snowflake_credentials
-target = dev
+target = prod
 dbt_skip_compilation_error = True
 
 [sqlfluff:templater:jinja]
