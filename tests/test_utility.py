@@ -1,4 +1,6 @@
-from ingestion.utility import full_timestamp, parquet_path, time_stamp
+from unittest.mock import MagicMock, patch
+
+from ingestion.utility import full_timestamp, get_aws_dst_params, parquet_path, time_stamp
 
 
 def test_time_stamp_format():
@@ -22,3 +24,17 @@ def test_parquet_path():
     path = parquet_path(folder, filename)
     assert path.startswith(folder + "/" + filename + "_")
     assert path.endswith(".parquet")
+
+
+def test_get_aws_dst_params():
+    mock_conn = MagicMock()
+    mock_conn.login = "FAKE_KEY"
+    mock_conn.password = "FAKE_SECRET"
+    mock_conn.extra_dejson = {"region": "eu-north-1", "bucket": "test-bucket"}
+
+    with patch("ingestion.utility.BaseHook.get_connection", return_value=mock_conn):
+        params = get_aws_dst_params()
+        assert params["aws_access_key_id"] == "FAKE_KEY"
+        assert params["aws_secret_access_key"] == "FAKE_SECRET"
+        assert params["region"] == "eu-north-1"
+        assert params["bucket"] == "test-bucket"

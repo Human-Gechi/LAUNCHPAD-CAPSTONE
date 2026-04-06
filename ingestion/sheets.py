@@ -2,7 +2,8 @@ import os
 
 import gspread
 import pandas as pd
-from google.oauth2.service_account import Credentials
+from airflow.providers.google.suite.hooks.sheets import GSheetsHook
+from airflow.sdk import Variable
 
 from ingestion.s3_to_s3 import MoveData
 from ingestion.write import write_parquet
@@ -16,26 +17,38 @@ class SheetsManager:
     Manages connection to Google Sheet and methods to retrieve data as DataFrame.
     """
 
-    def __init__(self, sheet_url=None, creds_file=None):
+    def __init__(self, sheet_url=None, gcp_conn_id="gspred_credentials"):
         """
         Initialize the SheetsManager with the Google Sheets URL and credentials file.
 
         Args:
             sheet_url (str, optional): The url of Google Sheet. If not provided,
             uses SHEETS_URL from environment.
-            creds_file (str, optional): Path to the Google service account credentials json file.
+            gcp_conn_id (str, optional): Airflow credentials
         """
-        self.scope = [
+        self.sheet_url = sheet_url or Variable.get("SHEETS_URL")
+        self.gcp_conn_id = gcp_conn_id
+
+        scopes = [
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive",
         ]
-        self.creds_file = creds_file or "crested-pursuit-457714-c8-f5a68d29f980.json"
-        self.sheet_url = sheet_url or os.getenv("SHEETS_URL")
-        self.creds = Credentials.from_service_account_file(self.creds_file, scopes=self.scope)
-        self.client = gspread.authorize(self.creds)
-        self.sheet = self.client.open_by_url(self.sheet_url)
+
+        self.hook = GSheetsHook(gcp_conn_id=self.gcp_conn_id)
+        creds = self.hook.get_credentials()
+        scoped_creds = creds.with_scopes(scopes)
+        client = gspread.authorize(scoped_creds)
+        self.sheet = client.open_by_url(self.sheet_url)
         self.worksheet = self.sheet.sheet1
-        ingest_logger.info("✅ Worsheet found, opened")
+
+    def get_dataframe(self):
+        """
+        Fetches all values(rows) from the worksheet and returns a DataFrame
+        """
+        data = self.worksheet.get_all_values()
+        header, rows = data[0], data[1:]
+        ingest_logger.info("✅ DataFrame created successfully")
+        return pd.DataFrame(rows, columns=header)
 
     def get_dataframe(self):
         """

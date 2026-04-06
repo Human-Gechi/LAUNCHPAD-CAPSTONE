@@ -1,6 +1,7 @@
 import io
 import json
 import os
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
@@ -12,82 +13,88 @@ folders = ["inventory", "products"]
 file_types = {}
 
 
-@pytest.fixture(autouse=True)
-def set_test_env(monkeypatch):
-    monkeypatch.setenv("DST_BUCKET", "test-bucket")
-    monkeypatch.setenv("DST_REGION", "eu-south-1")
-    monkeypatch.delenv("DST_PROFILE", raising=False)
-    monkeypatch.setenv("DST_ACCESS_KEY", "fake-dst-access-key")
-    monkeypatch.setenv("DST_SECRET_KEY", "fake-dst-secret-key")
-    monkeypatch.setenv("SRC_BUCKET", "src-test-bucket")
-    monkeypatch.setenv("SRC_REGION", "eu-south-1")
-    monkeypatch.setenv("SRC_ACCESS_KEY", "fake-src-access-key")
-    monkeypatch.setenv("SRC_SECRET_KEY", "fake-src-secret-key")
+@pytest.fixture
+def mock_conn():
+    mock_conn = MagicMock()
+    mock_conn.login = "FAKE_ACCESS_KEY"
+    mock_conn.password = "FAKE_SECRET_ACCESS_KEY"
+    mock_conn.extra_dejson = {
+        "src_region": "us-west-2",
+        "dst_region": "us-west-2",
+        "src_bucket": "test-bucket-src",
+        "dst_bucket": "test-bucket-dst",
+    }
+    with patch("ingestion.s3_to_s3.BaseHook.get_connection", return_value=mock_conn):
+        yield mock_conn
 
 
 @mock_aws
-def test_validate_folders():
+def test_validate_folders(mock_conn):
     source = "raw"
-    src_client = S3ClientFactory.create_client("SRC")
+    src_client = S3ClientFactory.create_client("aws-src")
     src_client.create_bucket(
-        Bucket=os.getenv("SRC_BUCKET"),
-        CreateBucketConfiguration={"LocationConstraint": os.getenv("SRC_REGION")},
+        Bucket=mock_conn.extra_dejson["src_bucket"],
+        CreateBucketConfiguration={"LocationConstraint": mock_conn.extra_dejson["src_region"]},
     )
-
     src_client.put_object(
-        Bucket=os.getenv("SRC_BUCKET"),
+        Bucket=mock_conn.extra_dejson["src_bucket"],
         Key="raw/inventory/file1.csv",
         Body=b"test",
     )
     src_client.put_object(
-        Bucket=os.getenv("SRC_BUCKET"),
+        Bucket=mock_conn.extra_dejson["src_bucket"],
         Key="raw/products/file2.json",
         Body=b"test",
     )
 
-    mover = MoveData(src_client, None, os.getenv("SRC_BUCKET"), os.getenv("DST_BUCKET"))
+    mover = MoveData(
+        src_client, None, mock_conn.extra_dejson["src_bucket"], mock_conn.extra_dejson["dst_bucket"]
+    )
     found_folders, file_types = mover.validate_folders(source)
     assert found_folders == {"inventory", "products"}
     assert file_types == {"inventory": {"csv"}, "products": {"json"}}
 
 
 @mock_aws
-def test_exist_by_basename():
+def test_exist_by_basename(mock_conn):
     source = "raw"
     basename = "inventory_2023_05_10", "products"
-    dst_client = S3ClientFactory.create_client("DST")
+    dst_client = S3ClientFactory.create_client("aws_dst")
     dst_client.create_bucket(
-        Bucket=os.getenv("DST_BUCKET"),
-        CreateBucketConfiguration={"LocationConstraint": os.getenv("DST_REGION")},
+        Bucket=mock_conn.extra_dejson["dst_bucket"],
+        CreateBucketConfiguration={"LocationConstraint": mock_conn.extra_dejson["dst_region"]},
     )
     for folder in folders:
         for base in basename:
             prefix = f"{source}/{folder}"
             dst_client.put_object(
-                Bucket=os.getenv("DST_BUCKET"),
+                Bucket=mock_conn.extra_dejson["dst_bucket"],
                 Key=f"{prefix}/{base}.parquet",
                 Body=b"test",
             )
 
-    mover = MoveData(None, dst_client, os.getenv("SRC_BUCKET"), os.getenv("DST_BUCKET"))
-
+    mover = MoveData(
+        None, dst_client, mock_conn.extra_dejson["src_bucket"], mock_conn.extra_dejson["dst_bucket"]
+    )
     assert mover.exists_by_basename(prefix, base)
 
 
 @mock_aws
-def test_read_json_file():
-    src_client = S3ClientFactory.create_client("SRC")
+def test_read_json_file(mock_conn):
+    src_client = S3ClientFactory.create_client("aws_dst")
     src_client.create_bucket(
-        Bucket=os.getenv("SRC_BUCKET"),
-        CreateBucketConfiguration={"LocationConstraint": os.getenv("SRC_REGION")},
+        Bucket=mock_conn.extra_dejson["src_bucket"],
+        CreateBucketConfiguration={"LocationConstraint": mock_conn.extra_dejson["src_region"]},
     )
 
     data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
     key = "raw/inventory/test.json"
     src_client.put_object(
-        Bucket=os.getenv("SRC_BUCKET"), Key=key, Body=json.dumps(data).encode("utf-8")
+        Bucket=mock_conn.extra_dejson["src_bucket"], Key=key, Body=json.dumps(data).encode("utf-8")
     )
-    mover = MoveData(src_client, None, os.getenv("SRC_BUCKET"), os.getenv("DST_BUCKET"))
+    mover = MoveData(
+        src_client, None, mock_conn.extra_dejson["src_bucket"], mock_conn.extra_dejson["dst_bucket"]
+    )
 
     df = mover.read_json_file(key)
     expected_df = pd.DataFrame(data)
@@ -95,11 +102,11 @@ def test_read_json_file():
 
 
 @mock_aws
-def test_read_csv_file():
-    src_client = S3ClientFactory.create_client("SRC")
+def test_read_csv_file(mock_conn):
+    src_client = S3ClientFactory.create_client("aws_src")
     src_client.create_bucket(
-        Bucket=os.getenv("SRC_BUCKET"),
-        CreateBucketConfiguration={"LocationConstraint": os.getenv("SRC_REGION")},
+        Bucket=mock_conn.extra_dejson["src_bucket"],
+        CreateBucketConfiguration={"LocationConstraint": mock_conn.extra_dejson["src_region"]},
     )
 
     data = {"quantity": [1, 2, 3], "prices": [0, 1, 3]}
@@ -109,11 +116,13 @@ def test_read_csv_file():
     csv_buffer = io.StringIO()
     pd.DataFrame(data).to_csv(csv_buffer, index=False)
     src_client.put_object(
-        Bucket=os.getenv("SRC_BUCKET"),
+        Bucket=mock_conn.extra_dejson["src_bucket"],
         Key=key,
         Body=csv_buffer.getvalue().encode("utf-8"),
     )
-    mover = MoveData(src_client, None, os.getenv("SRC_BUCKET"), os.getenv("DST_BUCKET"))
+    mover = MoveData(
+        src_client, None, mock_conn.extra_dejson["src_bucket"], mock_conn.extra_dejson["dst_bucket"]
+    )
 
     df = mover.read_csv_file(key)
     expected_df = pd.DataFrame(data)
@@ -121,47 +130,52 @@ def test_read_csv_file():
 
 
 @mock_aws
-def test_process_json_files():
-    src_client = S3ClientFactory.create_client("SRC")
-    dst_client = S3ClientFactory.create_client("DST")
+def test_process_json_files(mock_conn):
+    src_client = S3ClientFactory.create_client("aws_dst")
+    dst_client = S3ClientFactory.create_client("aws_src")
     src_client.create_bucket(
-        Bucket=os.getenv("SRC_BUCKET"),
-        CreateBucketConfiguration={"LocationConstraint": os.getenv("SRC_REGION")},
+        Bucket=mock_conn.extra_dejson["src_bucket"],
+        CreateBucketConfiguration={"LocationConstraint": mock_conn.extra_dejson["dst_region"]},
     )
     dst_client.create_bucket(
-        Bucket=os.getenv("DST_BUCKET"),
-        CreateBucketConfiguration={"LocationConstraint": os.getenv("DST_REGION")},
+        Bucket=mock_conn.extra_dejson["dst_bucket"],
+        CreateBucketConfiguration={"LocationConstraint": mock_conn.extra_dejson["dst_region"]},
     )
 
     # Upload files to source
     src_client.put_object(
-        Bucket=os.getenv("SRC_BUCKET"), Key="raw/inventory/file1.json", Body=b"{}"
+        Bucket=mock_conn.extra_dejson["src_bucket"], Key="raw/inventory/file1.json", Body=b"{}"
     )
     src_client.put_object(
-        Bucket=os.getenv("SRC_BUCKET"), Key="raw/inventory/file2.json", Body=b"{}"
+        Bucket=mock_conn.extra_dejson["src_bucket"], Key="raw/inventory/file2.json", Body=b"{}"
     )
 
     dst_client.put_object(
-        Bucket=os.getenv("DST_BUCKET"), Key="raw/inventory/file2.parquet", Body=b"{}"
+        Bucket=mock_conn.extra_dejson["dst_bucket"], Key="raw/inventory/file2.parquet", Body=b"{}"
     )
 
-    mover = MoveData(src_client, dst_client, os.getenv("SRC_BUCKET"), os.getenv("DST_BUCKET"))
+    mover = MoveData(
+        src_client,
+        dst_client,
+        mock_conn.extra_dejson["src_bucket"],
+        mock_conn.extra_dejson["dst_bucket"],
+    )
     dfs = mover.process_json_files("raw/inventory")
     filenames = [fname for _, fname in dfs]
     assert set(filenames) == {"file1.json"}
 
 
 @mock_aws
-def test_process_csv_files():
-    src_client = S3ClientFactory.create_client("SRC")
-    dst_client = S3ClientFactory.create_client("DST")
+def test_process_csv_files(mock_conn):
+    src_client = S3ClientFactory.create_client("aws_src")
+    dst_client = S3ClientFactory.create_client("aws_dst")
     src_client.create_bucket(
-        Bucket=os.getenv("SRC_BUCKET"),
-        CreateBucketConfiguration={"LocationConstraint": os.getenv("SRC_REGION")},
+        Bucket=mock_conn.extra_dejson["src_bucket"],
+        CreateBucketConfiguration={"LocationConstraint": mock_conn.extra_dejson["src_region"]},
     )
     dst_client.create_bucket(
-        Bucket=os.getenv("DST_BUCKET"),
-        CreateBucketConfiguration={"LocationConstraint": os.getenv("DST_REGION")},
+        Bucket=mock_conn.extra_dejson["dst_bucket"],
+        CreateBucketConfiguration={"LocationConstraint": mock_conn.extra_dejson["dst_region"]},
     )
 
     data1 = {"quantity": [1, 2, 3, 4], "stock": [1, 2, 3, 4]}
@@ -172,23 +186,28 @@ def test_process_csv_files():
     csv_buffer = io.StringIO()
     pd.DataFrame(data1).to_csv(csv_buffer, index=False)
     src_client.put_object(
-        Bucket=os.getenv("SRC_BUCKET"),
+        Bucket=mock_conn.extra_dejson["src_bucket"],
         Key=key1,
         Body=csv_buffer.getvalue().encode("utf-8"),
     )
     csv_buffer = io.StringIO()
     pd.DataFrame(data2).to_csv(csv_buffer, index=False)
     src_client.put_object(
-        Bucket=os.getenv("SRC_BUCKET"),
+        Bucket=mock_conn.extra_dejson["src_bucket"],
         Key=key2,
         Body=csv_buffer.getvalue().encode("utf-8"),
     )
 
     dst_client.put_object(
-        Bucket=os.getenv("DST_BUCKET"), Key="raw/inventory/file2.parquet", Body=b"{}"
+        Bucket=mock_conn.extra_dejson["dst_bucket"], Key="raw/inventory/file2.parquet", Body=b"{}"
     )
 
-    mover = MoveData(src_client, dst_client, os.getenv("SRC_BUCKET"), os.getenv("DST_BUCKET"))
+    mover = MoveData(
+        src_client,
+        dst_client,
+        mock_conn.extra_dejson["src_bucket"],
+        mock_conn.extra_dejson["dst_bucket"],
+    )
     dfs = mover.process_csv_files("raw/inventory")
     filenames = [fname for _, fname in dfs]
     assert set(filenames) == {"file1.csv"}

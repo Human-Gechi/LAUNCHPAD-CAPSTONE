@@ -42,16 +42,14 @@ models:
           - not_null
           - no_whitespace
           - accepted_values:
-              arguments:
-                values: ['Local (Same City)', 'Regional (Same State)', 'Long-Haul (Inter-State)']
+              values: ['Local (Same City)', 'Regional (Same State)', 'Long-Haul (Inter-State)']
       - name: route_performance_status
         description: "Assessment of the route's performance, indicating delay risks or efficiency."
         data_tests:
           - not_null
           - no_whitespace
           - accepted_values:
-              arguments:
-                values: ['High Delay Risk', 'Warehouse Delay', 'Good Route']
+              values: ['High Delay Risk', 'Warehouse Delay', 'Good Route']
 
   - name: int_transactions_enriched
     description: This model enriches transaction data with product details and financial calculations.
@@ -169,8 +167,7 @@ models:
           - not_null
           - no_whitespace
           - accepted_values:
-              arguments:
-                values: ['Stock-Out', 'Below Reorder Threshold', 'Healthy', 'Sufficient']
+              values: ['Stock-Out', 'Below Reorder Threshold', 'Healthy', 'Sufficient']
 
   - name: int_shipments_performance
     description: This model tracks and analyzes the performance of shipments.
@@ -220,8 +217,7 @@ models:
           - not_null
           - no_whitespace
           - accepted_values:
-              arguments:
-                values: ['Early', 'On time', 'Late']
+              values: ['Early', 'On time', 'Late']
 
   - name: int_supplier_products
     description: "Intermediate model mapping suppliers to their products, including supplier and product details."

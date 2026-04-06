@@ -1,7 +1,9 @@
 from datetime import timedelta
 
 import pendulum
+from airflow.providers.smtp.notifications.smtp import SmtpNotifier
 from airflow.sdk import dag, task, task_group
+from airflow_dbt_python.operators.dbt import DbtRunOperator, DbtSnapshotOperator, DbtTestOperator
 
 default_args = {
     "owner": "Human-Gechi",
@@ -13,7 +15,19 @@ default_args = {
 }
 
 DBT_PROJECT_DIR = "/opt/airflow/dbt_SupplyChain360"
-DBT_PROFILES_DIR = "/opt/airflow/dbt_SupplyChain360"
+DBT_PROFILE_NAME = "snowflake_credentials"
+
+send_report = SmtpNotifier(
+    from_email="okoliogechi74@gmail.com",
+    to="okoliogechi74@gmail.com",
+    subject="Supply Chain 360: {{ dag_run.state }}",
+    html_content="""
+    <h3>DAG Run Summary</h3>
+    <p>DAG: {{ dag.dag_id }}</p>
+    <p>Status: {{ dag_run.state }}</p>
+    <p>View details in the UI: <a href="{{ ti.log_url }}">Logs</a></p>
+    """,
+)
 
 
 @dag(
@@ -22,85 +36,103 @@ DBT_PROFILES_DIR = "/opt/airflow/dbt_SupplyChain360"
     start_date=pendulum.datetime(2026, 3, 31),
     schedule="0 0 10 * *",
     catchup=False,
+    on_success_callback=send_report,
+    on_failure_callback=send_report,
 )
 def supplychain_360():
     @task(task_id="extract")
-    def extract_task():
+    def extract():
         from ingestion.main import main
 
         main()
 
-    @task.bash(task_id="run_staging")
-    def run_staging():
-        return f"dbt run --select tag:staging --project-dir \
-            {DBT_PROJECT_DIR} --profiles-dir {DBT_PROFILES_DIR}"
-
-    @task.bash(task_id="test_staging")
-    def test_staging():
-        return f"dbt test --select tag:staging --project-dir\
-            {DBT_PROJECT_DIR} --profiles-dir {DBT_PROFILES_DIR}"
-
-    @task.bash(task_id="run_intermediate")
-    def run_intermediate():
-        return f"dbt run --select tag:intermediate --project-dir \
-            {DBT_PROJECT_DIR} --profiles-dir {DBT_PROFILES_DIR}"
-
-    @task.bash(task_id="test_intermediate")
-    def test_intermediate():
-        return f"dbt test --select tag:intermediate --project-dir \
-            {DBT_PROJECT_DIR} --profiles-dir {DBT_PROFILES_DIR}"
-
-    @task.bash(task_id="run_mart")
-    def run_mart():
-        return f"dbt run --select tag:mart --project-dir \
-            {DBT_PROJECT_DIR} --profiles-dir {DBT_PROFILES_DIR}"
-
-    @task.bash(task_id="test_mart")
-    def test_mart():
-        return f"dbt test --select tag:mart --project-dir \
-            {DBT_PROJECT_DIR} --profiles-dir {DBT_PROFILES_DIR}"
-
-    @task.bash(task_id="run_snapshot")
-    def run_snapshot():
-        return f"dbt snapshot --select tag:snapshot --project-dir\
-              {DBT_PROJECT_DIR} --profiles-dir {DBT_PROFILES_DIR}"
-
-    @task.bash(task_id="test_snapshot")
-    def test_snapshot():
-        return f"dbt test --select tag:snapshot --project-dir \
-              {DBT_PROJECT_DIR} --profiles-dir {DBT_PROFILES_DIR}"
+    @task_group(group_id="snapshot")
+    def snapshot():
+        run = DbtSnapshotOperator(
+            task_id="run",
+            project_dir=DBT_PROJECT_DIR,
+            profiles_dir=DBT_PROJECT_DIR,
+            profile=DBT_PROFILE_NAME,
+            select=["tag:snapshot"],
+            dbt_conn_id="snowflake_conn",
+        )
+        test = DbtTestOperator(
+            task_id="test",
+            project_dir=DBT_PROJECT_DIR,
+            profiles_dir=DBT_PROJECT_DIR,
+            profile=DBT_PROFILE_NAME,
+            select=["tag:snapshot"],
+            dbt_conn_id="snowflake_conn",
+        )
+        run >> test
 
     @task_group(group_id="staging")
     def staging():
-        s_run = run_staging()
-        s_test = test_staging()
-        s_run >> s_test
+        run = DbtRunOperator(
+            task_id="run",
+            project_dir=DBT_PROJECT_DIR,
+            profiles_dir=DBT_PROJECT_DIR,
+            profile=DBT_PROFILE_NAME,
+            select=["tag:staging"],
+            dbt_conn_id="snowflake_conn",
+        )
+        test = DbtTestOperator(
+            task_id="test",
+            project_dir=DBT_PROJECT_DIR,
+            profiles_dir=DBT_PROJECT_DIR,
+            profile=DBT_PROFILE_NAME,
+            select=["tag:staging"],
+            dbt_conn_id="snowflake_conn",
+        )
+        run >> test
 
     @task_group(group_id="intermediate")
     def intermediate():
-        i_run = run_intermediate()
-        i_test = test_intermediate()
-        i_run >> i_test
+        run = DbtRunOperator(
+            task_id="run",
+            project_dir=DBT_PROJECT_DIR,
+            profiles_dir=DBT_PROJECT_DIR,
+            profile=DBT_PROFILE_NAME,
+            select=["tag:intermediate"],
+            dbt_conn_id="snowflake_conn",
+        )
+        test = DbtTestOperator(
+            task_id="test",
+            project_dir=DBT_PROJECT_DIR,
+            profiles_dir=DBT_PROJECT_DIR,
+            profile=DBT_PROFILE_NAME,
+            select=["tag:intermediate"],
+            dbt_conn_id="snowflake_conn",
+        )
+        run >> test
 
     @task_group(group_id="mart")
     def mart():
-        m_run = run_mart()
-        m_test = test_mart()
-        m_run >> m_test
+        run = DbtRunOperator(
+            task_id="run",
+            project_dir=DBT_PROJECT_DIR,
+            profiles_dir=DBT_PROJECT_DIR,
+            profile=DBT_PROFILE_NAME,
+            select=["tag:mart"],
+            dbt_conn_id="snowflake_conn",
+        )
+        test = DbtTestOperator(
+            task_id="test",
+            project_dir=DBT_PROJECT_DIR,
+            profiles_dir=DBT_PROJECT_DIR,
+            profile=DBT_PROFILE_NAME,
+            select=["tag:mart"],
+            dbt_conn_id="snowflake_conn",
+        )
+        run >> test
 
-    @task_group(group_id="snapshot")
-    def snapshot():
-        snap_run = run_snapshot()
-        snap_test = test_snapshot()
-        snap_run >> snap_test
+    extract_task = extract()
+    staging_task = staging()
+    intermediate_task = intermediate()
+    mart_task = mart()
+    snapshot_task = snapshot()
 
-    extract = extract_task()
-    staging_group = staging()
-    intermediate_group = intermediate()
-    mart_group = mart()
-    snapshot_group = snapshot()
-
-    extract >> staging_group >> intermediate_group >> mart_group >> snapshot_group
+    extract_task >> snapshot_task >> staging_task >> intermediate_task >> mart_task
 
 
-dag = supplychain_360()
+dag_instance = supplychain_360()

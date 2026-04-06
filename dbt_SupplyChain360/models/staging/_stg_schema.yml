@@ -102,7 +102,6 @@ models:
           - not_null
           - no_whitespace
           - relationships:
-              arguments:
                 to: source('supplychain360', 'suppliers')
                 field: supplier_id
       - name: unit_price
@@ -186,7 +185,6 @@ models:
           - not_null
           - no_whitespace
           - relationships:
-              arguments:
                 to: source('supplychain360', 'warehouses')
                 field: warehouse_id
       - name: store_id
@@ -195,7 +193,6 @@ models:
           - not_null
           - no_whitespace
           - relationships:
-              arguments:
                 to: source('supplychain360', 'stores')
                 field: store_id
       - name: product_id
@@ -204,7 +201,6 @@ models:
           - not_null
           - no_whitespace
           - relationships:
-              arguments:
                 to: source('supplychain360', 'products')
                 field: product_id
       - name: quantity_shipped
@@ -255,7 +251,6 @@ models:
           - not_null
           - no_whitespace
           - relationships:
-              arguments:
                 to: source('supplychain360', 'warehouses')
                 field: warehouse_id
       - name: product_id
@@ -264,10 +259,8 @@ models:
           - not_null
           - no_whitespace
           - relationships:
-              arguments:
                 to: source('supplychain360', 'products')
                 field: product_id
-
       - name: quantity_available
         description: "Number of products available"
         data_tests:
@@ -311,19 +304,16 @@ models:
           - not_null
           - no_whitespace
           - relationships:
-              arguments:
                 to: source('supplychain360', 'stores')
                 field: store_id
       - name: product_id
         description: "(inferred) Unique identifier for products"
         data_tests:
           - not_null
+          - no_whitespace
           - relationships:
-              arguments:
                 to: source('supplychain360', 'products')
                 field: product_id
-          - no_whitespace:
-              column_name: product_id
       - name: quantity_sold
         description: "Quantity sold."
         data_tests:

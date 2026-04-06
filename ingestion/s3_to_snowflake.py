@@ -1,17 +1,15 @@
 import io
-import os
 import time
 
 import pandas as pd
 import snowflake.connector
+from airflow.sdk import BaseHook
 from snowflake.connector.pandas_tools import write_pandas
 
-from ingestion.s3_to_s3 import S3ClientFactory
 from logs.log import get_ingest_logger
 
 ingest_logger = get_ingest_logger()
 
-dst_client = S3ClientFactory.create_client("DST")
 base = "raw/"
 
 pq_to_sf_type = {
@@ -34,28 +32,32 @@ class SnowFlake:
     processing files, and tracking processed files.
     """
 
-    def __init__(self, dst_client, dst_bucket):
+    def __init__(self, dst_client, dst_bucket, conn_id="snowflake_conn"):
         """
-        Initialize the class above with destination s3 client and bucket, Snowflake credentials
+        Initialize with destination s3 client and bucket, and Airflow Snowflake connection ID.
 
         Args:
             dst_client (boto3.client): Destination S3 client.
             dst_bucket (str): Destination S3 bucket name.
+            conn_id (str): Airflow connection ID for Snowflake.
         """
-        self.user = os.getenv("SF_USER")
-        self.password = os.getenv("SF_PASSWORD")
-        self.account = os.getenv("SF_ACCOUNT")
-        self.warehouse = os.getenv("SF_WH")
-        self.database = os.getenv("SF_DB")
-        self.schema = os.getenv("SF_SCHEMA")
-        self.role = os.getenv("SF_ROLE")
         self.dst_client = dst_client
         self.dst_bucket = dst_bucket
+        self.conn_id = conn_id
+
+        # Fetch credentials from Airflow Connection
+        sf_conn = BaseHook.get_connection(self.conn_id)
+        self.user = sf_conn.login
+        self.password = sf_conn.password
+        self.account = sf_conn.extra_dejson.get("account")
+        self.warehouse = sf_conn.extra_dejson.get("warehouse")
+        self.database = sf_conn.extra_dejson.get("database")
+        self.schema = sf_conn.schema
+        self.role = sf_conn.extra_dejson.get("role")
 
     def conn_sf(self):
         """
-        Establishes a connection to Snowflake Warehouse with credentials
-        loaded from environment variables.
+        Establishes a connection to Snowflake Warehouse with credentials from Airflow Connection.
 
         Returns:
             conn: A connection object to the snowflake data warehouse

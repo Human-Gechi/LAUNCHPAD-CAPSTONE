@@ -15,6 +15,6 @@ locals {
     "stores",
     "transactions"
   ]
-  s3_folders_in_raw = [ for folder in local.s3_folders : "raw/${folder}/" ]
+  s3_folders_in_raw = [for folder in local.s3_folders : "raw/${folder}/"]
 }
 

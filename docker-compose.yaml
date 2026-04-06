@@ -49,8 +49,8 @@ x-airflow-common:
   # In order to add custom dependencies or upgrade provider distributions you can use your extended image.
   # Comment the image line, place your Dockerfile in the directory where you placed the docker-compose.yaml
   # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
-  image:
-  build: .
+  image: capstone:latest
+  # build:
   env_file:
     - ${ENV_FILE_PATH:-.env}
   environment:
@@ -76,11 +76,10 @@ x-airflow-common:
     AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
     PYTHONPATH: /opt/airflow
   volumes:
-    - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
+    - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/ingestion:/opt/airflow/ingestion
-    - ${AIRFLOW_PROJ_DIR:-.}/crested-pursuit-457714-c8-f5a68d29f980.json:/opt/airflow/crested-pursuit-457714-c8-f5a68d29f980.json
     - ${AIRFLOW_PROJ_DIR:-.}/dbt_SupplyChain360:/opt/airflow/dbt_SupplyChain360
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:

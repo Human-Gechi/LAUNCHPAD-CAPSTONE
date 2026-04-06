@@ -4,7 +4,7 @@
     )
 }}
 SELECT DISTINCT
-    {{ clean_id('transaction_id', "'UNKNOWN'") }} AS transaction_id,
+    {{ clean_string('transaction_id', "'UNKNOWN'") }} AS transaction_id,
     {{ clean_id('store_id', "'STORE-XXXX'") }} AS store_id,
     {{ clean_id('product_id', "'PROD-XXXX'") }} AS product_id,
     {{ clean_number('quantity_sold') }} AS quantity_sold,

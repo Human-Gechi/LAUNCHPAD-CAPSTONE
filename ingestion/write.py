@@ -9,8 +9,7 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from ingestion.config import get_config
-from ingestion.utility import parquet_path, time_stamp
+from ingestion.utility import get_aws_dst_params, parquet_path, time_stamp
 from logs.log import get_ingest_logger
 
 ingest_logger = get_ingest_logger()
@@ -34,10 +33,12 @@ def object_metadata(data_source: str, df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def get_dest_s3_client():
+def get_dest_s3_client(conn_id="aws_dst"):
     """
     Get for s3 client for destination AWS account.
 
+    Args:
+        conn_id
     Returns:
             str: The S3 key where the Parquet file was uploaded.
 
@@ -45,21 +46,20 @@ def get_dest_s3_client():
         botocore.exceptions.NoCredentialsError: If credentials are invalid
     """
     try:
-        # Session creation
-        config = get_config()
-
-        # return boto3 client for DST bucket
+        aws_params = get_aws_dst_params(conn_id)
         return boto3.client(
             "s3",
-            aws_access_key_id=config["DST_ACCESS_KEY"],
-            aws_secret_access_key=config["DST_SECRET_KEY"],
-            region_name=config["DST_REGION"],
+            aws_access_key_id=aws_params["aws_access_key_id"],
+            aws_secret_access_key=aws_params["aws_secret_access_key"],
+            region_name=aws_params["region"],
         )
     except botocore.exceptions.NoCredentialsError:
         ingest_logger.error("❌ Destination Credentials invalid ")
 
 
-def write_parquet(df: pd.DataFrame, data_source: str, folder: str, filename: str) -> str:
+def write_parquet(
+    df: pd.DataFrame, data_source: str, folder: str, filename: str, conn_id="aws_dst"
+) -> str:
     """
     Converts a pandas DataFrame to Parquet format and uploads it to the destination S3 raw bucket.
 
@@ -68,6 +68,7 @@ def write_parquet(df: pd.DataFrame, data_source: str, folder: str, filename: str
         data_source (str): The name of the data source (used for metadata and S3 key).
         folder(str): Folder path to files
         filename (str): The base name for the Parquet file in S3.
+        conn_id: Airflow connection to amazon s3
 
     Returns:
         str: The S3 key where the Parquet file was uploaded.
@@ -76,30 +77,22 @@ def write_parquet(df: pd.DataFrame, data_source: str, folder: str, filename: str
         botocore.exceptions.ClientError: If there is an error uploading to S3.
         botocore.exceptions.EndpointConnectionError: If there is a network issue connecting to S3.
     """
-    config = get_config()
-    # object meta data
     df = object_metadata(data_source, df)
 
-    # Convert to parquet in memory
     buffer = BytesIO()
 
-    # Convert DataFrame to Pyarrow table
     df.columns = df.columns.map(str)
     table = pa.Table.from_pandas(df)
-
-    # Write table to parquet format
     pq.write_table(table, buffer)
 
-    # Move cursor to start of program
     buffer.seek(0)
 
-    # Convert to parquet file
     s3_key = parquet_path(folder, filename)
 
-    # Upload to your S3 bucket
     try:
-        s3_client = get_dest_s3_client()
-        s3_client.put_object(Bucket=config["DST_BUCKET"], Key=s3_key, Body=buffer.getvalue())
+        s3_client = get_dest_s3_client(conn_id)
+        aws_params = get_aws_dst_params(conn_id)
+        s3_client.put_object(Bucket=aws_params["bucket"], Key=s3_key, Body=buffer.getvalue())
         ingest_logger.info(f"✅Object {s3_key} sent ")
     except botocore.exceptions.ClientError as e:
         ingest_logger.error(f"❌An error occured {e}")

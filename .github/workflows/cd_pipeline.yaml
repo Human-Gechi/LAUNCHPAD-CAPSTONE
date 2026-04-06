@@ -37,8 +37,8 @@ jobs:
 
       - name: Tag Docker image
         run: |
-          docker tag capstone:latest 601955859589.dkr.ecr.eu-north-1.amazonaws.com/capstone/dec-project
+          docker tag capstone:latest 601955859589.dkr.ecr.eu-north-1.amazonaws.com/capstone/main
 
       - name: Push Docker image to ECR
         run: |
-          docker push 601955859589.dkr.ecr.eu-north-1.amazonaws.com/capstone/dec-project
+          docker push 601955859589.dkr.ecr.eu-north-1.amazonaws.com/capstone/main

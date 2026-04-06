@@ -29,14 +29,14 @@ clean-targets:         # directories to be removed by `dbt clean`
 models:
   supplychain360:
     staging:
-      +schema: staging
+      +schema: STAGING_SUPPLYCHAIN
       +materialized: view
       +tags: staging
     intermediate:
-      +schema: intermediate
+      +schema: INTERMEDIATE_SUPPLYCHAIN
       +materialized: incremental
       +tags: intermediate
     marts:
-      +schema: mart
+      +schema: MARTS_SUPPLYCHAIN
       +materialized: table
       +tags: mart

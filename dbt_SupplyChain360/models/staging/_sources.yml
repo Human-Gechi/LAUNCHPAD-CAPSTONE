@@ -3,8 +3,8 @@ version: 2
 sources:
   - name: supplychain360
     description: "SUPPLYCHAIN360 database from S3 buckets into Snowflake DW using Python script"
-    database: SUPPLYCHAIN360
-    schema: RAW
+    database: SUPPLYCHAIN360DB
+    schema: RAW_SUPPLYCHAIN
 
     tables:
       - name: inventory
@@ -20,10 +20,12 @@ sources:
             description: "The minimum inventory level at which a new order should be placed to replenish stock."
           - name: snapshot_date
             description: "The timestamp indicating when this record was captured in the snapshot."
-          - name: ingestion_date
-            description: "Date it was ingested from source s3 bucket"
+          - name: s3_extraction_date
+            description: "Timestamp when data was ingested into s3"
           - name: origin
-            description: "Identifies the original raw file or data source from the S3 bucket where this record was ingested."
+            description: "Data source"
+          - name: ingestion_date
+            description: "Date the data was ingested from source s3 bucket to snowflake"
 
       - name: stores
         description: "Information about all physical locations of stores"
@@ -40,10 +42,12 @@ sources:
             description: "Region in the US ; EAST, WEST, NORTH, SOUTH, MIDWEST"
           - name: store_open_date
             description: "Date the store was opened"
-          - name: ingestion_date
-            description: "Date it was ingested from source s3 bucket"
+          - name: sheets_extraction_date
+            description: "Timestamp when data was ingested into s3"
           - name: origin
-            description: "Identifies the original raw file or data source from the S3 bucket where this record was ingested."
+            description: "Data source"
+          - name: ingestion_date
+            description: "Date the data was ingested from source s3 bucket to snowflake"
 
       - name: warehouses
         description: "Details about warehouse facilities, including id, location, state"
@@ -54,10 +58,12 @@ sources:
             description: "City where the warehouse is located"
           - name: state
             description: "State where the warehouse is located in the US."
-          - name: ingestion_date
-            description: "Date it was ingested from source s3 bucket"
+          - name: s3_extraction_date
+            description: "Timestamp when data was ingested into s3"
           - name: origin
-            description: "Identifies the original raw file or data source from the S3 bucket where this record was ingested."
+            description: "Data source"
+          - name: ingestion_date
+            description: "Date the data was ingested from source s3 bucket to snowflake"
 
       - name: products
         description: "Master list of products, including id, names, categories, unit price."
@@ -74,10 +80,12 @@ sources:
             description: "ID of the supplier"
           - name: unit_price
             description: "Cost of each product quantity"
-          - name: ingestion_date
-            description: "Date it was ingested from source s3 bucket"
+          - name: s3_extraction_date
+            description: "Timestamp when data was ingested into s3"
           - name: origin
-            description: "Identifies the original raw file or data source from the S3 bucket where this record was ingested."
+            description: "Data source"
+          - name: ingestion_date
+            description: "Date the data was ingested from source s3 bucket to snowflake"
 
       - name: suppliers
         description: "Information abour suppliers including country, supplier_name etc ..."
@@ -90,10 +98,12 @@ sources:
             description: "Category of the products supplied"
           - name: country
             description: "Country where the supplier is located"
-          - name: ingestion_date
-            description: "Date it was ingested from source s3 bucket"
+          - name: s3_extraction_date
+            description: "Timestamp when data was ingested into s3"
           - name: origin
-            description: "Identifies the original raw file or data source from the S3 bucket where this record was ingested."
+            description: "Data source"
+          - name: ingestion_date
+            description: "Date the data was ingested from source s3 bucket to snowflake"
 
       - name: shipments
         description: "Information about shipments providing product id, warehouses information, carrier of shipments( UPS, FedX, DHL)."
@@ -116,10 +126,12 @@ sources:
             description: "Date product arrived"
           - name: carrier
             description: "Name of shipment carrier"
-          - name: ingestion_date
-            description: "Date it was ingested from source s3 bucket"
+          - name: s3_extraction_date
+            description: "Timestamp when data was ingested into s3"
           - name: origin
-            description: "Identifies the original raw file or data source from the S3 bucket where this record was ingested."
+            description: "Data source"
+          - name: ingestion_date
+            description: "Date the data was ingested from source s3 bucket to snowflake"
 
       - name: transactions
         description: "Logs inventory transactions sales daily."
@@ -140,8 +152,9 @@ sources:
             description: "Total cost if discount is available"
           - name: transaction_timestamp
             description: "Epoch/Unix time stored in microseconds"
-          - name: ingestion_date
-            description: "Date it was ingested from source s3 bucket"
+          - name: rds_extraction_date
+            description: "Timestamp when data was ingested into s3"
           - name: origin
-            description: "Identifies the original raw file or data source from the S3 bucket where this record was ingested."
-
+            description: "Data source"
+          - name: ingestion_date
+            description: "Date the data was ingested from source s3 bucket to snowflake"

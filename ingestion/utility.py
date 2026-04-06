@@ -1,6 +1,21 @@
 # Built-in
 from datetime import datetime
 
+from airflow.sdk import BaseHook
+
+
+def get_aws_dst_params(conn_id="aws_dst"):
+    """
+    AWS connection where destination s3 buckets live
+    """
+    conn = BaseHook.get_connection(conn_id)
+    return {
+        "aws_access_key_id": conn.login,
+        "aws_secret_access_key": conn.password,
+        "region": conn.extra_dejson.get("region"),
+        "bucket": conn.extra_dejson.get("bucket"),
+    }
+
 
 def time_stamp() -> datetime:
     """

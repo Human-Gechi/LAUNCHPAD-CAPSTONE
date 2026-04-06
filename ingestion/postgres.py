@@ -3,6 +3,7 @@ import time
 
 import pandas as pd
 import psycopg2
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 from dotenv import load_dotenv
 
 from ingestion.s3_to_s3 import MoveData
@@ -34,12 +35,8 @@ class Postgres:
             Ingests data from RDS to s3 destination bucket
     """
 
-    def __init__(self, dst_client, dst_bucket):
-        self.host = os.getenv("DB_HOST")
-        self.port = os.getenv("DB_PORT")
-        self.user = os.getenv("DB_USER")
-        self.db = os.getenv("DB_NAME")
-        self.password = os.getenv("DB_PASSWORD")
+    def __init__(self, dst_client, dst_bucket, conn_id="postgres_conn"):
+        self.conn_id = conn_id
         self.dst_client = dst_client
         self.dst_bucket = dst_bucket
         self.data_source = "rds"
@@ -55,15 +52,8 @@ class Postgres:
         retry = 5
         for attempt in range(retry):
             try:
-                conn = psycopg2.connect(
-                    host=self.host,
-                    port=self.port,
-                    user=self.user,
-                    password=self.password,
-                    dbname=self.db,
-                    sslmode="require",
-                    connect_timeout=30,
-                )
+                pg_hook = PostgresHook(postgres_conn_id=self.conn_id)
+                conn = pg_hook.get_conn()
                 try:
                     with conn.cursor() as cur:
                         cur.execute("SELECT 1;")

@@ -7,8 +7,8 @@ from io import StringIO
 import boto3
 import botocore.exceptions
 import pandas as pd
+from airflow.sdk import BaseHook
 
-from ingestion.config import get_config
 from ingestion.write import write_parquet
 from logs.log import get_ingest_logger
 
@@ -28,18 +28,14 @@ class S3ClientFactory:
     """
 
     @staticmethod
-    def create_client(prefix):
-        config = get_config()
-        access_key = config[f"{prefix}_ACCESS_KEY"]
-        secret_key = config[f"{prefix}_SECRET_KEY"]
-        region = config[f"{prefix}_REGION"]
-
-        return boto3.client(
-            "s3",
-            aws_access_key_id=access_key,
-            aws_secret_access_key=secret_key,
-            region_name=region,
+    def create_client(conn_id):
+        aws_conn = BaseHook.get_connection(conn_id)
+        session = boto3.Session(
+            aws_access_key_id=aws_conn.login,
+            aws_secret_access_key=aws_conn.password,
+            region_name=aws_conn.extra_dejson.get("region"),
         )
+        return session.client("s3")
 
 
 # Ingestion class

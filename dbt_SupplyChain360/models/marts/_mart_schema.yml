@@ -157,8 +157,7 @@ models:
           - not_null
           - no_whitespace
           - accepted_values:
-              arguments:
-                values : ['High Efficiency', 'Standard', 'Bottleneck Detected']
+              values : ['High Efficiency', 'Standard', 'Bottleneck Detected']
 
   - name: fct_regional_sales
     description: "Fact table summarizing sales and revenue by region."

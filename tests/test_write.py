@@ -1,19 +1,13 @@
 import os
+from unittest.mock import MagicMock, patch
 
 import boto3
 import pandas as pd
 import pytest
 from moto import mock_aws
 
+from ingestion.utility import get_aws_dst_params
 from ingestion.write import get_dest_s3_client, object_metadata, write_parquet
-
-
-@pytest.fixture(autouse=True)
-def set_test_env(monkeypatch):
-    monkeypatch.setenv("DST_BUCKET", "test-bucket")
-    monkeypatch.setenv("DST_REGION", "eu-south-1")
-    monkeypatch.setenv("DST_ACCESS_KEY", "test-access-key")
-    monkeypatch.setenv("DST_SECRET_KEY", "test-secret-key")
 
 
 def test_object_metadata():
@@ -29,24 +23,35 @@ def test_object_metadata():
     assert isinstance(result, pd.DataFrame)
 
 
+@pytest.fixture
+def get_aws_dst_params():
+    mock_conn = MagicMock()
+    mock_conn.login = "FAKE_KEY"
+    mock_conn.password = "FAKE_SECRET"
+    mock_conn.extra_dejson = {"region": "eu-north-1", "bucket": "test-bucket"}
+
+    with patch("ingestion.utility.BaseHook.get_connection", return_value=mock_conn):
+        yield mock_conn
+
+
 @mock_aws
-def test_get_dest_s3_client():
-    client = get_dest_s3_client()
+def test_get_dest_s3_client(get_aws_dst_params):
+    client = get_dest_s3_client(conn_id="aws_dst")
     assert hasattr(client, "put_object")
     assert callable(client.put_object)
 
 
 @mock_aws
-def test_write_parquet():
+def test_write_parquet(get_aws_dst_params):
     s3 = boto3.client(
         "s3",
-        aws_access_key_id=os.getenv("DST_ACCESS_KEY"),
-        aws_secret_access_key=os.getenv("DST_SECRET_KEY"),
-        region_name=os.getenv("DST_REGION"),
+        aws_access_key_id=get_aws_dst_params.login,
+        aws_secret_access_key=get_aws_dst_params.password,
+        region_name=get_aws_dst_params.extra_dejson["region"],
     )
     s3.create_bucket(
-        Bucket=os.getenv("DST_BUCKET"),
-        CreateBucketConfiguration={"LocationConstraint": os.getenv("DST_REGION")},
+        Bucket=get_aws_dst_params.extra_dejson["bucket"],
+        CreateBucketConfiguration={"LocationConstraint": get_aws_dst_params.extra_dejson["region"]},
     )
 
     df = pd.DataFrame({"quantity": [1, 2], "price": [3, 4]})
@@ -56,6 +61,6 @@ def test_write_parquet():
 
     write_parquet(df, data_source, folder, filename)
 
-    response = s3.list_objects_v2(Bucket=os.getenv("DST_BUCKET"), Prefix=folder)
+    response = s3.list_objects_v2(Bucket=get_aws_dst_params.extra_dejson["bucket"], Prefix=folder)
     assert response["KeyCount"] == 1
     assert response["Contents"][0]["Key"].startswith(f"{folder}/{filename}")

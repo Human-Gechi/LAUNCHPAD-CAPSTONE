@@ -1,34 +1,45 @@
 resource "aws_iam_user" "DE-Supply-Chain" {
-  name = "DE-Supply-Chain-360"
+  name = "DE-Supply-Chain-360-HEAD"
 
   tags = merge(local.common_tags, {
-    Role = "Contract-DE"
+    Role = "Contract-DE-SUPPLYCHAIN360"
   })
 }
 
 resource "random_password" "dynamic_password" {
-    length = var.password_lenght
-    special = true
-    upper = true
-    lower = true
-    numeric = true
+  length  = var.password_lenght
+  special = true
+  upper   = true
+  lower   = true
+  numeric = true
 }
 
 resource "aws_iam_access_key" "DE_access_key" {
-    user = aws_iam_user.DE-Supply-Chain.name
+  user = aws_iam_user.DE-Supply-Chain.name
 }
 
-resource "aws_iam_user_login_profile" "DE-LoginProfile" {
-    user = aws_iam_user.DE-Supply-Chain.name
-    password_reset_required = true
+resource "aws_iam_user_login_profile" "DE-SC-LoginProfile" {
+  user                    = aws_iam_user.DE-Supply-Chain.name
+  password_reset_required = true
 }
 
 resource "aws_ssm_parameter" "access_key_security" {
-  name  = "/${var.project_name}/access_key_id"
-  type  = "String"
-  value = aws_iam_access_key.DE_access_key.id
+  name      = "/${var.project_name}/access_key_id"
+  type      = "SecureString"
+  value     = aws_iam_access_key.DE_access_key.id
   overwrite = true
 
+  tags = merge(local.common_tags,
+    {
+      Name = "${var.project_name}-ssm"
+  })
+}
+
+resource "aws_ssm_parameter" "secret_access_key" {
+  name      = "/${var.project_name}/secre_access_key"
+  type      = "SecureString"
+  value     = aws_iam_access_key.DE_access_key.secret
+  overwrite = true
   tags = merge(local.common_tags,
     {
       Name = "${var.project_name}-ssm"
@@ -50,62 +61,6 @@ resource "aws_iam_user_policy" "allow_change_password" {
     ]
   })
 }
-resource "aws_iam_user_policy" "s3_global_list" {
-  name = "S3GlobalList"
-  user = aws_iam_user.DE-Supply-Chain.name
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Sid    = "S3GlobalList",
-        Effect = "Allow",
-        Action = [
-          "s3:ListAllMyBuckets",
-          "s3:GetBucketLocation",
-          "s3:GetBucketAcl",
-          "s3:GetBucketWebsite",
-          "s3:GetBucketLogging",
-          "s3:GetBucketTagging",
-          "s3:GetAccountPublicAccessBlock"
-        ],
-        Resource = "*"
-      }
-    ]
-  })
-}
-resource "aws_iam_user_policy" "s3_specific_bucket_access" {
-  name = "S3SpecificBucketAccess"
-  user = aws_iam_user.DE-Supply-Chain.name
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Sid    = "S3SpecificBucketAccess",
-        Effect = "Allow",
-        Action = [
-          "s3:ListBucket",
-          "s3:ListAccessPoints",
-          "s3:GetBucketMetadataTableConfiguration",
-          "s3:GetBucketVersioning",
-          "s3:GetLifecycleConfiguration",
-          "s3:GetReplicationConfiguration",
-          "s3:GetInventoryConfiguration",
-          "s3:GetBucketPublicAccessBlock",
-          "s3:GetBucketPolicy",
-          "s3:PutBucketVersioning",
-          "s3:GetEncryptionConfiguration",
-          "s3:GetBucketObjectLockConfiguration",
-          "s3:PutBucketTagging"
-        ],
-        Resource = [
-          "arn:aws:s3:::${aws_s3_bucket.SupplyChain360.id}"
-        ]
-      }
-    ]
-  })
-}
 
 resource "aws_iam_user_policy" "s3_object_access" {
   name = "S3ObjectAccess"
@@ -117,13 +72,24 @@ resource "aws_iam_user_policy" "s3_object_access" {
       {
         Effect = "Allow",
         Action = [
+          "s3:ListBucket",
+          "s3:PutBucketTagging",
+          "s3:ListAllMyBuckets"
+        ],
+        Resource = [
+          "arn:aws:s3:::${module.s3.bucket_name}"
+        ]
+      },
+      {
+        Effect = "Allow",
+        Action = [
           "s3:GetObject",
           "s3:PutObject",
           "s3:DeleteObject",
           "s3:GetObjectTagging"
         ],
         Resource = [
-          "arn:aws:s3:::${aws_s3_bucket.SupplyChain360.id}/*"
+          "arn:aws:s3:::${module.s3.bucket_name}/*"
         ]
       }
     ]
@@ -157,39 +123,108 @@ resource "aws_iam_user_policy" "iam_access" {
   })
 }
 
-resource "aws_iam_user_policy" "vpc_ec2" {
-  name = "Vpc-EC2"
+resource "aws_iam_user_policy" "ecr_access" {
+  name = "ECRAccess"
   user = aws_iam_user.DE-Supply-Chain.name
 
   policy = jsonencode({
     Version = "2012-10-17",
-    Statement =[
-          {
-           "Sid": "NetworkingAndInfrastructure",
-          "Effect": "Allow",
-          "Action": [
-            "ec2:CreateVpc",
-            "ec2:DescribeVpcs",
-            "ec2:DescribeVpcAttribute",
-            "ec2:CreateSubnet",
-            "ec2:DescribeSubnets",
-            "ec2:CreateInternetGateway",
-            "ec2:AttachInternetGateway",
-            "ec2:DescribeInternetGateways",
-            "ec2:CreateRouteTable",
-            "ec2:AssociateRouteTable",
-            "ec2:CreateRoute",
-            "ec2:DescribeRouteTables",
-            "ec2:CreateSecurityGroup",
-            "ec2:AuthorizeSecurityGroupIngress",
-            "ec2:AuthorizeSecurityGroupEgress",
-            "ec2:DescribeSecurityGroups",
-            "ec2:CreateTags",
-            "ec2:DescribeNetworkInterfaces"
-
-          ],
-          "Resource": "*"
-        }
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "ecr:GetAuthorizationToken"
+        ],
+        Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:PutImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload"
+        ],
+        Resource = "arn:aws:ecr:${var.region}:601955859589:repository/*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "ecr:CreateRepository"
+        ],
+        Resource = "arn:aws:ecr:${var.region}:601955859589:repository/*"
+      }
     ]
   })
+}
+
+resource "aws_iam_policy" "ssm_parameter_access" {
+  name   = "SSMParameterAccess"
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetParameter",
+        "ssm:GetParameters",
+        "ssm:GetParameterHistory",
+        "ssm:PutParameter",
+        "ssm:DeleteParameter",
+        "ssm:DescribeParameters"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_user_policy_attachment" "ssm_parameter_access" {
+  user       = aws_iam_user.DE-Supply-Chain.name
+  policy_arn = aws_iam_policy.ssm_parameter_access.arn
+}
+
+resource "aws_iam_policy" "ec2_access" {
+  name   = "EC2Access"
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateVpc",
+        "ec2:DescribeVpcs",
+        "ec2:DescribeVpcAttribute",
+        "ec2:CreateSubnet",
+        "ec2:DescribeSubnets",
+        "ec2:CreateInternetGateway",
+        "ec2:AttachInternetGateway",
+        "ec2:DescribeInternetGateways",
+        "ec2:CreateRouteTable",
+        "ec2:AssociateRouteTable",
+        "ec2:CreateRoute",
+        "ec2:DescribeRouteTables",
+        "ec2:CreateSecurityGroup",
+        "ec2:AuthorizeSecurityGroupIngress",
+        "ec2:AuthorizeSecurityGroupEgress",
+        "ec2:DescribeSecurityGroups",
+        "ec2:CreateTags",
+        "ec2:DescribeNetworkInterfaces"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_user_policy_attachment" "ec2_access" {
+  user       = aws_iam_user.DE-Supply-Chain.name
+  policy_arn = aws_iam_policy.ec2_access.arn
 }
