@@ -1,0 +1,22 @@
+[sqlfluff]
+templater = dbt
+dialect = snowflake
+exclude_rules = RF03, RF02
+
+[sqlfluff:templater:dbt]
+project_dir = dbt_SupplyChain360
+profiles_dir = dbt_SupplyChain360
+profile = snowflake_credentials
+target = prod
+dbt_skip_compilation_error = True
+
+[sqlfluff:templater:jinja]
+apply_dbt_builtins = True
+
+[sqlfluff:templater:jinja:macros]
+# Macros provided as builtins for dbt projects
+dbt_ref = {% macro ref(model_ref) %}{{model_ref}}{% endmacro %}
+dbt_source = {% macro source(source_name, table) %}{{source_name}}_{{table}}{% endmacro %}
+dbt_config = {% macro config() %}{% for k in kwargs %}{% endfor %}{% endmacro %}
+dbt_var = {% macro var(variable, default='') %}item{% endmacro %}
+dbt_is_incremental = {% macro is_incremental() %}True{% endmacro %}

@@ -1,0 +1,14 @@
+gspread
+boto3
+pandas==2.3.3
+dbt-core
+dbt-snowflake
+pytest
+sqlfluff
+sqlfluff-templater-dbt
+ruff
+psycopg2-binary
+moto
+apache-airflow-providers-postgres
+apache-airflow-providers-google
+airflow-dbt-python

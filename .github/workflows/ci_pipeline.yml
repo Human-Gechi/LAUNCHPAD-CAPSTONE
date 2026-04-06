@@ -1,0 +1,49 @@
+name: SupplyChain360
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  code-linting-formatting:
+    runs-on: ubuntu-latest
+    env:
+      SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+      SF_USER: ${{ secrets.SF_USER }}
+      SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
+      SF_ROLE: ${{ secrets.SF_ROLE }}
+      SF_DB: ${{ secrets.SF_DB }}
+      SF_WH: ${{ secrets.SF_WH }}
+      SF_SCHEMA: ${{ secrets.SF_SCHEMA }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12.4'
+
+      - name: Install Project dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run ruff
+        run: ruff check .
+
+      - name: Run ruff formatting check
+        run: ruff format --check .
+
+      - name: Run tests
+        run: pytest
+
+      - name: Debug dbt project
+        run: dbt debug --project-dir dbt_SupplyChain360 --profiles-dir dbt_SupplyChain360
+
+      - name: Compile dbt project
+        run: dbt compile --project-dir dbt_SupplyChain360 --profiles-dir dbt_SupplyChain360
+
+      - name: Lint SQL
+        run: sqlfluff lint dbt_SupplyChain360/models dbt_SupplyChain360/snapshots
