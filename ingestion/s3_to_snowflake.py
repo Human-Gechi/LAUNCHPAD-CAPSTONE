@@ -295,8 +295,8 @@ class SnowFlake:
                 USING {self.database}.{self.schema}.{staging_table} s
                 ON ({" AND ".join([f't."{col}" = s."{col}"' for col in df.columns])})
                 WHEN NOT MATCHED THEN
-                INSERT ({', '.join([f'"{col}"' for col in df.columns])})
-                VALUES ({', '.join([f's."{col}"' for col in df.columns])});
+                INSERT ({", ".join([f'"{col}"' for col in df.columns])})
+                VALUES ({", ".join([f's."{col}"' for col in df.columns])});
             """
             cur.execute(merge_sql)
             if cur.rowcount is not None:

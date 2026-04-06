@@ -9,6 +9,7 @@ snowflake_credentials:
       role: "{{ env_var('SF_ROLE') }}"
       database: "{{ env_var('SF_DB') }}"
       warehouse: "{{ env_var('SF_WH') }}"
+      schema: "{{ env_var('SF_SCHEMA') }}
       threads: 4
       client_session_keep_alive: False
       connect_retries: 4

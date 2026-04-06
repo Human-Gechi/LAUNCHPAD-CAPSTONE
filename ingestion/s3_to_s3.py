@@ -179,8 +179,10 @@ class MoveData:
                 if key.startswith(prefix) and key.endswith(".csv"):
                     base = os.path.splitext(key.split("/")[-1])[0]
                     if self.exists_by_basename(prefix, base):
-                        ingest_logger.info(f"⏩ Skipped reading {key} \
-                        (already exists in dest bucket)")
+                        ingest_logger.info(
+                            f"⏩ Skipped reading {key} \
+                        (already exists in dest bucket)"
+                        )
                         continue
                     df = self.read_csv_file(key)
                     filename = key.split("/")[-1]
@@ -207,8 +209,10 @@ class MoveData:
                 if key.startswith(prefix) and key.endswith(".json"):
                     base = os.path.splitext(key.split("/")[-1])[0]
                     if self.exists_by_basename(prefix, base):
-                        ingest_logger.info(f"⏩ Skipped reading {key} \
-                        (already exists in dest bucket)")
+                        ingest_logger.info(
+                            f"⏩ Skipped reading {key} \
+                        (already exists in dest bucket)"
+                        )
                         continue
                     df = self.read_json_file(key)
                     filename = key.split("/")[-1]
