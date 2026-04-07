@@ -302,4 +302,4 @@ ALSO SET UP A VARIABLE FOR SHEETS URL
 | cd_pipeline.yaml  | Builds, pushes Docker images, and deploys to AWS ECR.  |
 
 
-Feedback, suggestions, and improvements is welcomed. If you find an issue or have an idea to enhance this project, feel free to open an issue or start a discussion.
+**Feedback, suggestions, and improvements is welcomed. If you find an issue or have an idea to enhance this project, feel free to open an issue or start a discussion.**
