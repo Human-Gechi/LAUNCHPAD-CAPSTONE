@@ -215,16 +215,16 @@ This directory contains all dbt (Data Build Tool) assets for transforming raw da
 | int_warehouse_to_store_efficiency.sql | Classifies warehouses and stores according to locations|
 
 **MARTS MODELS**
-| File Name | Description |
-|-----------|-------------|
-| dim_products.sql | |
-| dim_stores.sql | |
-| dim_supplier.sql | |
-| dim_warehouses.sql | |
-| fct_inventory.sql | |
-| fct_regional_sales.sql | |
-| fct_transactions.sql | |
-| fct_warehouse_efficiency.sql | |
+| File Name |
+|-----------|
+| dim_products.sql |
+| dim_stores.sql |
+| dim_supplier.sql |
+| dim_warehouses.sql |
+| fct_inventory.sql |
+| fct_regional_sales.sql |
+| fct_transactions.sql |
+| fct_warehouse_efficiency.sql |
 
 
 **Orchestration**
