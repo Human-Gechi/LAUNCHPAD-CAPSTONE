@@ -6,6 +6,7 @@
     {%- if custom_schema_name is none -%}
         {{ default_schema }}
     {%- else -%}
+    {# Use schema provided in dbt_profile.yml #}
         {{ custom_schema_name | trim }}
     {%- endif -%}
 
