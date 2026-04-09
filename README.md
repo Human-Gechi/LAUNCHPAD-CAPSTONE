@@ -69,13 +69,13 @@ Input variables for customizing the S3 module (e.g., bucket name, region).
 Outputs relevant S3 resource information (e.g., bucket name, ARN).
 
 **`module/snowflake/`**
-main.tf
+- main.tf
 Provisions Snowflake resources such as databases, schemas, roles, and users.
-variables.tf
+- variables.tf
 Input variables for customizing the Snowflake module (e.g database name, user).
-output.tf
+- output.tf
 Outputs relevant Snowflake resource information (e.g database name, user).
-versions.tf
+- versions.tf
 Specifies the required provider version for Snowflake.
 
 ### **Ingestion Mechanism:**
@@ -132,7 +132,7 @@ MoveData validates, processes and checks for file existencein the source bucket,
 **Google Sheets Extraction (sheets.py)**
 This module provides classes and methods for extracting data from Google Sheets and ingesting it into an S3 bucket, leveraging Airflow for credential management and logging.
 
-Key Classes and Functions
+**Key Classes and Functions**
 - `SheetsManager` (Class)
 Manages the connection to a Google Sheet using Airflow's GSheetsHook and the gspread library.
   - __init__(sheet_url=None, gcp_conn_id="gspred_credentials"):
@@ -227,15 +227,15 @@ This directory contains all dbt (Data Build Tool) assets for transforming raw da
 | fct_warehouse_efficiency.sql |
 
 
-**Orchestration**
+###**Orchestration**
 Airflow orchestrates the entire data pipeline using a modular DAG defined in orchestrate.py. The workflow is organized into clear stages—extraction, snapshot, staging, intermediate, and mart—each represented as a task or task group. The pipeline:
 
-**extract** data from all sources (S3, Google Sheets, Postgres) by calling the main ingestion script.
-**Runs dbt snapshots** to capture slowly changing dimensions.
-**Executes dbt models** in the staging, intermediate, and mart layers, with tests after each run to ensure data quality.
-**Sends email notifications on success or failure.**
+- **extract** data from all sources (S3, Google Sheets, Postgres) by calling the main ingestion script.
+- **Runs dbt snapshots** to capture slowly changing dimensions.
+- **Executes dbt models** in the staging, intermediate, and mart layers, with tests after each run to ensure data quality.
+- **Sends email notifications on success or failure.**
 
-**Prerequisites**
+### **Project Prerequisites**
 - AWS Account:
 Required for S3, IAM, and other AWS resources.
 - Snowflake Account:
@@ -247,7 +247,7 @@ Used for Infrastructure as Code (IaC). Install Terraform
 - Python >= 3.11
 For running Airflow, ingestion scripts, and dbt.
 
-**AIRFLOW CREDENTIALS**
+### **AIRFLOW CREDENTIALS**
 ```yaml
 Conn Id: aws_src
 Conn Type: Amazon Web Services
@@ -286,7 +286,7 @@ Extra: {"region": "DST_REGION", "bucket": "DST_BUCKET"}
 
 ALSO SET UP A VARIABLE FOR SHEETS URL
 ```
-**TESTS**
+### **TESTS**
 | File Name         | Description                                              |
 |-------------------|---------------------------------------------------------|
 | test_postgres.py  | Tests Postgres extraction and S3 writing logic.          |
