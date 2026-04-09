@@ -227,7 +227,7 @@ This directory contains all dbt (Data Build Tool) assets for transforming raw da
 | fct_warehouse_efficiency.sql |
 
 
-###**Orchestration**
+### **Orchestration**
 Airflow orchestrates the entire data pipeline using a modular DAG defined in orchestrate.py. The workflow is organized into clear stages—extraction, snapshot, staging, intermediate, and mart—each represented as a task or task group. The pipeline:
 
 - **extract** data from all sources (S3, Google Sheets, Postgres) by calling the main ingestion script.
@@ -235,7 +235,7 @@ Airflow orchestrates the entire data pipeline using a modular DAG defined in orc
 - **Executes dbt models** in the staging, intermediate, and mart layers, with tests after each run to ensure data quality.
 - **Sends email notifications on success or failure.**
 
-### **Project Prerequisites**
+### **PROJECT PREREQUISITES **
 - AWS Account:
 Required for S3, IAM, and other AWS resources.
 - Snowflake Account:
