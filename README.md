@@ -235,7 +235,7 @@ Airflow orchestrates the entire data pipeline using a modular DAG defined in orc
 - **Executes dbt models** in the staging, intermediate, and mart layers, with tests after each run to ensure data quality.
 - **Sends email notifications on success or failure.**
 
-### **PROJECT PREREQUISITES **
+### **PROJECT PREREQUISITES**
 - AWS Account:
 Required for S3, IAM, and other AWS resources.
 - Snowflake Account:
