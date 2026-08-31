@@ -1,8 +1,6 @@
 # SupplyChain360 — dbt Project
 
-A dbt project that transforms raw retail/supply-chain data (transactions, inventory, shipments, products, stores, suppliers, warehouses) into clean, analytics-ready models on Snowflake. The project follows a **staging → intermediate → marts** layering pattern, with most of the actual business logic — cleaning, enrichment, financial calculations, and status classification — expressed in SQL across those layers.
-
-This README focuses on **what the SQL is doing** at each layer rather than just the dbt scaffolding.
+SupplyChain360 is a SQL-driven data transformation project that turns raw, messy retail and supply-chain data — transactions, inventory, shipments, products, stores, suppliers, and warehouses — into clean, trustworthy, analytics-ready tables on Snowflake(data warehouse). The core of the project is the SQL itself: reusable cleaning logic, multi-table joins, financial calculations (revenue, cost, profit margin), and rule-based status classification (stock health, delivery performance, warehouse efficiency) that turn raw operational records into the kind of metrics a business team can actually act on. The project is organized using a staging → intermediate → marts layering pattern (via dbt), which keeps each SQL transformation isolated, testable, and traceable back to its source.
 
 ---
 
