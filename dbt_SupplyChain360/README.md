@@ -6,7 +6,7 @@ SupplyChain360 is a SQL-driven data transformation project that turns raw, messy
 
 ## SQL Skills Demonstrated
 
-This project is a working example of turning raw, messy operational data into business-usable metrics — the core of what's asked of a business analyst working with a data warehouse.
+This project is a working example of turning raw, messy operational data into business-usable metrics.
 
 | Skill | Where it shows up |
 |---|---|
